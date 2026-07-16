@@ -1,0 +1,76 @@
+INSTANCE PARAMETERS
+===================
+Current configuration: 3 regions, max_endurance=55.0
+Generated with seed=42
+
+
+INSTANCE GENERATION
+-------------------
+num_regions         = 3
+area_bounds         = (0, 0, 100, 100) m
+min_region_size     = 12.0 m
+max_region_size     = 25.0 m
+spacing             = 6.0 m
+num_heights         = 3 (heights generated: 15, 40, 65 m)
+num_ops             = 3
+seed                = 42
+
+
+DRONE PARAMETERS
+----------------
+front_area          = 0.1 m2
+drag_coef           = 0.3
+cruise_speed        = 15.0 m/s
+vertical_speed      = 5.0 m/s
+max_endurance       = 55.0 (default 3000)
+E_xy = E_z         = 0.5 * drag_coef * front_area = 0.015 m2
+
+
+CONE CHAIN PARAMETERS
+---------------------
+base_spacing        = 5.0 m
+ref_height          = 15.0 m
+h_cone              = 90.0 m (height at which the cone closes)
+region_heights:
+  R0               = 15 m
+  R1               = 40 m
+  R2               = 65 m
+
+
+WIND PARAMETERS
+---------------
+speed_at_10m        = 6.3 m/s (random between 2-8)
+hellmann_exponent   = 0.2
+direction           = random (from seed 42)
+
+
+ATMOSPHERE (ISA Standard)
+-------------------------
+T0 (sea level temp)    = 288.15 K
+p0 (sea level press)   = 101325 Pa
+L (temp lapse rate)    = 0.0065 K/m
+g                      = 9.80665 m/s2
+M (air molar mass)     = 0.0289652 kg/mol
+R (gas constant)       = 8.314462 J/(mol.K)
+rho(0m)                = 1.225 kg/m3
+rho(15m)               ~ 1.223 kg/m3
+rho(40m)               ~ 1.220 kg/m3
+rho(65m)               ~ 1.217 kg/m3
+
+
+GENERATED CHAINS
+----------------
+Region  | Height | Segments | Length
+R0      | 15 m   | 17       | 122.9 m
+R1      | 40 m   | 11       | 62.0 m
+R2      | 65 m   | 11       | 38.5 m
+
+
+GUROBI SOLVER
+-------------
+TimeLimit            = 120 s
+MIPFocus             = 1 (focus on feasibility)
+Heuristics           = 0.5
+Total variables      = 12480 (2532 binary)
+Constraints          = 34841
+Quadratic constraints = 408

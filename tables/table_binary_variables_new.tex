@@ -1,0 +1,38 @@
+% \begin{tiny}
+% \begin{table}[h!]
+% \begin{tabular}{llll}
+% \textbf{Name} & \textbf{Domain} & \textbf{Range} & \textbf{Description} \\
+% $\mu_v^s$ & $\mathcal V' \times \mathcal S_p$ & $\{0,1\}$ & 1, if vertex $v$ is located at the segment $s$. \\
+% $\alpha_p$ & $\mathcal P_h$ & $\{0, 1\}$ & 1, if polygonal chain $p$ is selected for the height $h$ associated to region $r$. \\
+% $x_{vv'}^o$ & $\mathcal E \times \mathcal O$ & $\{0, 1\}$ & 1, if the drone goes from vertex $v$ to vertex $v^'$ in operation $o$\\
+% $y_v^o$ & $\mathcal V \times \mathcal O$ & $\{0, 1\}$ & 1, if vertex $v$ is visited during operation $o$\\
+% $\zeta^o$ & $ \mathcal O$ & $\{0, 1\}$ & 1, if all vertices are visited before starting operation $o$\\
+% $k^o$ & $\mathcal O$ & $ \mathcal I $ & number of vertices visited in operation $o$\\
+% $\varphi_{rr'}$ & $\mathcal R \times \mathcal R$ & $\{0, 1\}$  & 1, if the drone moves from region $r$ to region $r^'$ at the height selected to visit region $r$\\
+% $\psi_{rr'} $ & $\mathcal R \times \mathcal R$  & $\{0, 1\}$ & 1, if the height selected to visit region $r$ is lower than the height selected to visit region $r^'$
+% \end{tabular}
+% \label{table:variables1}
+% \end{table}
+% \end{tiny}
+
+\begin{table}[h!]
+\centering
+\caption{Corrected Table of Variables}
+\label{table:variables1}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Name} & \textbf{Domain} & \textbf{Range} & \textbf{Description} \\
+\midrule
+$\mu_{v}^s$ & $\mathcal V' \times \{s\in\mathcal S_t:t\in\mathcal T_r\}$ & $\{0,1\}$ & 1, if vertex $v=(r,i)$ is located at the segment $s\in \mathcal S_t$, where $t\in\mathcal T_r$. \\
+$\alpha_{t}$ & $\{t\in\mathcal T_r:r\in\mathcal R\}$ & $\{0, 1\}$ & 1, if polygonal chain $t$ is selected. \\
+$x_{vv'}^o$ & $\mathcal E \times \mathcal O$ & $\mathbb{Z}^+$ & integer number of times the drone traverses the edge $(v,v')$ in operation $o$. \\
+$y_{vv'}^o$ & $\mathcal{E}^{int} \times \mathcal O$ & $\{0, 1\}$ & 1, if vertex $v$ is the edge $(v,v')$ is visited during operation $o$. \\
+$\zeta^o$ & $\mathcal O$ & $\{0, 1\}$ & 1, if all vertices are visited before starting operation $o$. \\
+$k^o$ & $\mathcal O$ & $[1, 2,\ldots, |\mathcal V'|]$ & number of vertices visited in operation $o$. \\
+$\varphi_{rr'}$ & $\{(r,r')\in\mathcal R \times \mathcal R:r\neq r'\}$ & $\{0, 1\}$ & 1, if the drone moves from region $r$ to region $r'$ at the height selected to visit region $r$. \\
+$\psi_{rr'}$ & $\{(r,r')\in\mathcal R \times \mathcal R:r\neq r'\}$ & $\{0, 1\}$ & 1, if the height selected to visit region $r$ is lower than the height selected to visit region $r'$. \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

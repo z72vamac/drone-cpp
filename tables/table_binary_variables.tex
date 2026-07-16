@@ -1,0 +1,21 @@
+\begin{table}[h!]
+\centering
+\caption{Corrected Table of Variables}
+\label{table:variables1}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Name} & \textbf{Domain} & \textbf{Range} & \textbf{Description} \\
+\midrule
+$\mu_{v}^s$ & $\mathcal V_2 \times \{s\in\mathcal S_t:t\in\mathcal T_r\}$ & $\{0,1\}$ & 1, if vertex $v=(r,i)$ is located at the segment $s\in \mathcal S_t$, where $t\in\mathcal T_r$. \\
+$\alpha_{t}$ & $\{t\in\mathcal T_r:r\in\mathcal R\}$ & $\{0, 1\}$ & 1, if polygonal chain $t$ is selected. \\
+$x_{vv'}^o$ & $\mathcal E \times \mathcal O$ & $\{0, 1\}$ & 1, if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. \\
+$y_{v}^o$ & $\mathcal V' \times \mathcal O$ & $\{0, 1\}$ & 1, if vertex $v$ is visited during operation $o$. \\
+$\zeta^o$ & $\mathcal O$ & $\{0, 1\}$ & 1, if all vertices are visited before starting operation $o$. \\
+$k^o$ & $\mathcal O$ & $[1, 2,\ldots, |\mathcal V'|]$ & number of vertices visited in operation $o$. \\
+$\varphi_{rr'}$ & $\{(r,r')\in\mathcal R \times \mathcal R:r\neq r'\}$ & $\{0, 1\}$ & 1, if the drone moves from region $r$ to region $r'$ at the height selected to visit region $r$. \\
+$\psi_{rr'}$ & $\{(r,r')\in\mathcal R \times \mathcal R:r\neq r'\}$ & $\{0, 1\}$ & 1, if the height selected to visit region $r$ is lower than the height selected to visit region $r'$. \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

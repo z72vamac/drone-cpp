@@ -1,0 +1,304 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[colorlinks]{hyperref}
+\hypersetup{citecolor=blue,linkcolor=blue}
+\allowdisplaybreaks
+\newcommand{\CV}[1]{{\color{blue}#1}}
+\newcommand{\todo}[1]{{\color{red}#1}}
+
+\title{Documentation of the model implemented in Python}
+\author{Comparison with the paper formulation}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+This document describes the MIQP model implemented in the file \texttt{model.py}
+and highlights the main differences with respect to the mathematical formulation
+in the paper \emph{Drone Coverage Path Planning} (Amorosi, Dell'Olmo, Puerto, Valverde).
+
+\subsection*{Common notation}
+
+\begin{itemize}
+  \item $\mathcal R$: set of regions.
+  \item $\mathcal V'$: vertices (interruption points in each region).
+  \item $\mathcal E^{int} = \mathcal E_{RL}^{int} \cup \mathcal E_{LR}^{int}$: intra-region edges (RL = forward, LR = backward).
+  \item $\mathcal E^{ext}$: inter-region edges.
+  \item $\mathcal T_r$: polygonal chains available for region $r$.
+  \item $\mathcal S_t$: segments of chain $t$.
+  \item $Q^s, Q^{s+1}$: endpoints of segment $s$.
+  \item $L(s) = \|Q^{s+1} - Q^s\|$: length of segment $s$.
+  \item $E^{xy} = \frac12 c A$, $E^{z} = \frac12 c A$: drag constants.
+  \item $\rho_t$: air density at the height of chain $t$.
+  \item $\nu_{t,s}^d$: actual drone speed over segment $s$ of chain $t$.
+  \item $W^{max}$: maximum drone endurance.
+\end{itemize}
+
+\newpage
+\section{Variables of the implemented model}
+
+\subsection{Binary variables}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Variable & Domain & Description \\
+\midrule
+$\mu_v^{ts}$ & $\mathcal V' \times \{(t,s): t\in\mathcal T_r, s\in\mathcal S_t\}$ & 1 if vertex $v=(r,i)$ is assigned to segment $s$ of chain $t$. \\
+$\alpha_t$ & $\{t\in\mathcal T_r : r\in\mathcal R\}$ & 1 if chain $t$ is selected for its region. \\
+$x_{uv}^o$ & $\mathcal E \times \mathcal O$ & 1 if the drone traverses $(u,v)$ in operation $o$. \\
+$y_v^o$ & $\mathcal V \times \mathcal O$ & 1 if vertex $v$ is visited in operation $o$. \\
+$\zeta^o$ & $\mathcal O$ & 1 if all vertices have been visited before operation $o$. \\
+$\varphi_{rr'}$ & $\mathcal R \times \mathcal R$, $r\neq r'$ & 1 if the drone moves from $r$ to $r'$ at the height of $r$. \\
+$\psi_{rr'}$ & $\mathcal R \times \mathcal R$, $r\neq r'$ & 1 if the height of $r$ is lower than that of $r'$. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Continuous and integer variables}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Variable & Range & Description \\
+\midrule
+$P_v$ & $\mathbb R^3$ & Coordinates of the point associated with vertex $v$. \\
+$\gamma_v$ & $[0,1]$ & Position within the selected segment. \\
+$\lambda_v$ & $[0, S_t]$ & Global parametrization on the selected chain. \\
+$dfs_v$ & $[0, L_{max}]$ & Distance from the start of the chain. \\
+$efs_v$ & $[0, L_{max}\cdot 10]$ & Energy from the start of the chain. \\
+$d_{uv}^{xy}$ & $[0, D_{max}]$ & Inter-region horizontal distance. \\
+$d_{uv}^z$ & $[0, H_{max}]$ & Inter-region vertical distance. \\
+$d_{uv}$ & $[0, D_{max}+H_{max}+L_{max}]$ & Total distance between $u$ and $v$. \\
+$w_{uv}$ & $[0, \infty)$ & Energy between $u$ and $v$. \\
+$k^o$ & $\{0,\dots,|\mathcal V'|\}$ & Number of vertices visited in operation $o$. \\
+$u_v^o$ & $\{1,\dots,|\mathcal V'|\}$ & MTZ variable for subtour elimination. \\
+$\rho_r$ & $[0,\rho(0)]$ & Selected density for region $r$. \\
+$\eta_v^{ts}$ & $[0,1]$ & Linearization of $\gamma_v\cdot\mu_v^{ts}$. \\
+% Various linearization auxiliaries
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Location constraints}
+
+They match the paper in structure. The main difference is in the fixing
+of the START and END vertices:
+
+\begin{align}
+  P_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+        \bigl[ \mu_v^{ts} Q^s + \eta_v^{ts} (Q^{s+1}-Q^s) \bigr],
+        && \forall v=(r,i)\in\mathcal V', \tag{LC1}\\
+  P_v^z &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t} \mu_v^{ts} \cdot (\text{height of }t),
+        && \forall v=(r,i)\in\mathcal V', \tag{LC1z}\\
+  \sum_{s\in\mathcal S_t} \mu_v^{ts} &= \alpha_t,
+        && \forall v=(r,i)\in\mathcal V',\; \forall t\in\mathcal T_r, \tag{LC2}\\
+  \sum_{t\in\mathcal T_r} \alpha_t &= 1,
+        && \forall r\in\mathcal R, \tag{LC3}\\
+  \lambda_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t} (s-1)\mu_v^{ts} + \gamma_v,
+        && \forall v\in\mathcal V', \tag{LC4}\\
+  \lambda_v &= 0,
+        &&\forall v=(r,1),(r,2), \tag{LC5}\\
+  \mu_v^{t0} &= \alpha_t,
+        &&\forall v=(r,1),(r,2),\; \forall t\in\mathcal T_r, \tag{LC5b (new)}\\
+  \lambda_u &\le \lambda_v,
+        &&\forall (u,v)\in\mathcal E_{RL}^{int}, \tag{LC6}\\
+  \lambda_u &= \lambda_v,
+        &&\forall (u,v)\in\mathcal E_{LR}^{int}, \tag{LC7}\\
+  \lambda_v &= \sum_{t\in\mathcal T_r} S_t \alpha_t,
+        &&\forall v=(r,2R+1),(r,2R+2), \tag{LC8}\\
+  \mu_v^{t,S_t-1} &= \alpha_t,
+        &&\forall v=(r,2R+1),(r,2R+2),\; \forall t\in\mathcal T_r. \tag{LC8b (new)}
+\end{align}
+
+Constraints LC5b and LC8b explicitly fix the segment (first or last)
+of the START and END vertices, a simplification with respect to the paper
+where this fixing was done implicitly through $\lambda_v$ and the domain
+of $\mu$.
+
+\section{Drone path constraints}
+
+They match the paper except for subtour elimination:
+
+\begin{align}
+  \sum_{v\neq v_0} x_{v_0 v}^o &= 1 - \zeta^o,
+        && \forall o\in\mathcal O, \tag{DP1}\\
+  \sum_{u} x_{uv}^o - \sum_{u} x_{vu}^o &= 0,
+        && \forall v\in\mathcal V',\; \forall o\in\mathcal O, \tag{DP2}\\
+  \sum_{v\neq v_0} x_{v v_0}^o &= 1 - \zeta^o,
+        && \forall o\in\mathcal O, \tag{DP3}\\
+  \sum_{u} x_{vu}^o &= y_v^o,
+        && \forall v\in\mathcal V,\; \forall o\in\mathcal O, \tag{DP4}\\
+  \sum_{u} x_{uv}^o &= y_v^o,
+        && \forall v\in\mathcal V,\; \forall o\in\mathcal O, \tag{DP5}\\
+  \sum_{o} y_v^o &= 1,
+        && \forall v\in\mathcal V', \tag{DP6}\\
+  u_u^o - u_v^o + 1 &\le (|\mathcal V'|-1)(1-x_{uv}^o),
+        && \forall u\neq v\in\mathcal V',\; \forall o\in\mathcal O, \tag{DP7 (MTZ)}\\
+  \sum_{o} x_{uv}^o &= 1,
+        && \forall (u,v)\in\mathcal E_{RL}^{int}. \tag{DP8}
+\end{align}
+
+\noindent \textbf{Difference:} The paper uses exponential DFJ constraints
+(original DP7). The implementation uses MTZ ($u_v^o$), which requires
+$O(|\mathcal V'|^2 |\mathcal O|)$ constraints but is manageable for
+small instances.
+
+\section{Intra-region distances}
+
+\subsection*{Paper approach (with bilinear $\beta$)}
+The paper defines $d_{vv'}^{ss'}$ using bilinear products
+$\beta_{vv'}^{ss'} = \mu_v^s \mu_{v'}^{s'}$, resulting in expressions
+depending on 4 indices (two vertices, two segments).
+
+\subsection*{Implemented approach (DFS)}
+Instead of $\beta$, a continuous variable $dfs_v$ is introduced to represent
+the cumulative distance from the start of the chain to vertex $v$:
+
+\begin{align}
+  dfs_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+          \bigl[ \text{cum\_before}(s) \cdot \mu_v^{ts}
+          + L(s) \cdot \eta_v^{ts} \bigr],
+          && \forall v\in\mathcal V', \tag{DFS}\\
+  d_{uv} &= dfs_v - dfs_u,
+          && \forall (u,v)\in\mathcal E_{RL}^{int}, \tag{IDIST}\\
+  d_{uv} &= 0,
+          && \forall (u,v)\in\mathcal E_{LR}^{int}. \tag{IDIST0}
+\end{align}
+
+where $\text{cum\_before}(s) = \sum_{s' < s} L(s')$, and $\eta_v^{ts} = \gamma_v \cdot \mu_v^{ts}$
+is linearized via standard Fortet constraints (binary $\times$ continuous).
+
+This formulation is more compact: it avoids the double products $\mu_v^s\mu_{v'}^{s'}$
+and reduces the number of variables and quadratic constraints.
+
+\section{Intra-region energy}
+
+Analogously to distance, a variable $efs_v$ is used for cumulative energy:
+
+\begin{align}
+  efs_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+          \bigl[ C_{ts} \cdot \text{cum\_before}(s) \cdot \mu_v^{ts}
+          + C_{ts} \cdot \eta_v^{ts} \bigr],
+          && \forall v\in\mathcal V', \tag{EFS}\\
+  w_{uv} &= efs_v - efs_u,
+          && \forall (u,v)\in\mathcal E_{RL}^{int}, \tag{IENER}\\
+  w_{uv} &= 0,
+          && \forall (u,v)\in\mathcal E_{LR}^{int}, \tag{IENER0}
+\end{align}
+where $C_{ts} = E^{xy} \rho_t \nu_{ts}^d L(s)$ is the energy per unit
+distance on segment $s$ of chain $t$, computed as a constant
+(pre-process).
+
+\section{Inter-region distances and energy}
+
+\subsection*{Distances}
+They match the paper:
+
+\begin{align}
+  d_{uv} &= d_{uv}^{xy} + d_{uv}^z,
+          && \forall (u,v)\in\mathcal E^{ext}, \tag{DIST3}\\
+  d_{uv}^{xy} &\ge \|(P_u^x-P_v^x,\; P_u^y-P_v^y)\|_2,
+          && \forall (u,v)\in\mathcal E^{ext}, \tag{DIST4 (SOC)}\\
+  d_{uv}^z &\ge |P_u^z - P_v^z|,
+          && \forall (u,v)\in\mathcal E^{ext}. \tag{DIST5-6}
+\end{align}
+
+\subsection*{Inter-region energy}
+
+The inter-region energy in the implementation follows the same structure
+as the paper (with $\varphi_{rr'}$ and $\psi_{rr'}$), but all
+bilinear products are explicitly linearized using the functions
+\texttt{\_lin\_bb} (binary $\times$ binary) and \texttt{\_lin\_bc}
+(binary $\times$ continuous).
+
+The general implemented form is:
+\begin{align}
+  w_{uv} &= \underbrace{B^{xy}_{r1} \varphi_{rr'} d_{uv}^{xy} 
+           \sum_{t\in\mathcal T_r} \alpha_t \rho_t}_{\text{linearized}}
+           + \underbrace{B^z \varphi_{rr'}\psi_{rr'} d_{uv}^z
+           \tfrac12(\rho_r+\rho_{r'})}_{\text{linearized}} \nonumber\\
+         &\quad + \underbrace{B^{xy}_{r2} (1-\varphi_{rr'}) d_{uv}^{xy}
+           \sum_{t\in\mathcal T_{r'}} \alpha_t \rho_t}_{\text{linearized}}
+           + \underbrace{B^z (1-\varphi_{rr'})(1-\psi_{rr'}) d_{uv}^z
+           \tfrac12(\rho_r+\rho_{r'})}_{\text{linearized}}, \tag{INTER-ENER}
+\end{align}
+where each bilinear term is replaced by an auxiliary variable with its
+4 linearization constraints.
+
+\section{Depot energy}
+
+The implementation uses a simplified model with constant density $\rho_0$:
+
+\begin{align}
+  d_{v_0 v} &= d_{v}^{xy} + d_v^z,
+            && \forall v\in\mathcal V', \tag{DEP-DIST}\\
+  d_{v}^{xy} &\ge \|(P_v^x - d_x,\; P_v^y - d_y)\|_2,
+            && \forall v\in\mathcal V', \tag{DEP-SOC}\\
+  d_v^z &\ge |P_v^z|,
+            && \forall v\in\mathcal V', \tag{DEP-Z}\\
+  w_{v_0 v} &= E^{xy}\rho_0 \nu^{xy} d^{xy} + \tfrac12 E^z \rho_0 \nu^z d^z,
+            && \forall v\in\mathcal V', \tag{DEP-ENER}\\
+  w_{v v_0} &= E^{xy}\rho_0 \nu^{xy} d^{xy},
+            && \forall v\in\mathcal V'. \tag{DEP-ENER-S}
+\end{align}
+
+\noindent \textbf{Difference:} In the paper, the ascent energy ($v_0\to v$)
+considers the variable density $\rho_r + \rho_0$; the implementation uses only
+$\rho_0$ as an approximation.
+
+\section{Endurance constraint}
+
+\begin{align}
+  \sum_{u,v\in\mathcal V} \ell_{uv}^o &\le W^{max},
+        && \forall o\in\mathcal O, \tag{END}\\
+  \ell_{uv}^o &\le x_{uv}^o \cdot M,
+        && \forall (u,v)\in\mathcal E,\; \forall o\in\mathcal O, \tag{END-LIN1}\\
+  \ell_{uv}^o &\le w_{uv},
+        && \forall (u,v)\in\mathcal E,\; \forall o\in\mathcal O, \tag{END-LIN2}\\
+  \ell_{uv}^o &\ge w_{uv} - (1-x_{uv}^o) M,
+        && \forall (u,v)\in\mathcal E,\; \forall o\in\mathcal O, \tag{END-LIN3}\\
+  \ell_{uv}^o &\ge 0,
+        && \forall (u,v)\in\mathcal E,\; \forall o\in\mathcal O. \tag{END-LIN4}
+\end{align}
+where $\ell_{uv}^o$ linearizes the product $x_{uv}^o \cdot w_{uv}$.
+
+\section{Objective function}
+
+\begin{equation}
+  \min W = \sum_{u,v\in\mathcal V}\sum_{o\in\mathcal O}
+  \ell_{uv}^o, \qquad \ell_{uv}^o \text{ linearizes } x_{uv}^o \cdot d_{uv}. \tag{OBI}
+\end{equation}
+
+\noindent \textbf{Difference:} The paper minimizes total distance;
+the implementation does exactly the same, but with explicit
+linearization of the product $x\cdot d$.
+
+\section{Summary of differences}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Aspect & Paper & Implementation \\
+\midrule
+Intra-RL distance & $\beta_{vv'}^{ss'} = \mu_v^s \mu_{v'}^{s'}$ (bilinear) & $dfs_v$ with $\eta_v^{ts} = \mu_v^{ts}\gamma_v$ linearized \\
+Intra-RL energy & Analogous to distance & Same $efs_v$ strategy \\
+Subtours & DFJ (exponential) & MTZ ($u_v^o$, polynomial) \\
+START/END fixing & Implicit ($\lambda$) & Explicit (LC5b, LC8b) \\
+Depot energy $\uparrow$ & $\rho_r + \rho_0$ variable & $\rho_0$ constant \\
+Linearization & $\beta$ bilinear not linearized & All bilinearities explicitly linearized \\
+Number of heights & Multiple heights with $\varphi,\psi$ & Multiple heights with $\varphi,\psi$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The main contribution of the implementation is the elimination of
+bilinear products $\mu_v^s\mu_{v'}^{s'}$ through the $dfs_v$-based
+formulation, which avoids $O(|\mathcal V'|^2|\mathcal S_t|^2)$ variables $\beta$.
+
+\end{document}

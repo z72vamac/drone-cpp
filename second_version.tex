@@ -1,0 +1,536 @@
+\documentclass[12pt]{elsarticle}
+
+% Add additional packages here if required
+\usepackage{lineno, subfig}
+\graphicspath{{imgs/}}
+\modulolinenumbers[5]
+\usepackage{float}
+\usepackage{breqn}
+\usepackage{xcolor}
+\usepackage{comment}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools,amssymb}
+\usepackage{graphicx}
+% \usepackage{caption}
+% \usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{optidef}
+%\PassOptionsToPackage{gray}{xcolor}
+\usepackage{pstricks}
+\usepackage{pst-all}
+\usepackage{xcolor}
+\usepackage{amsthm}
+\usepackage{comment}
+% \usepackage{pgfplots}
+
+\usepackage{soul}
+\usepackage{mathrsfs}
+\usepackage[ruled]{algorithm2e}
+\usepackage{xspace}
+\usepackage{ulem}
+\usepackage{multirow}
+
+\usepackage{bigstrut}
+\usepackage{url}
+% \usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumerate}
+\usepackage{makecell}
+\newtheorem*{remark}{Remark}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\allowdisplaybreaks
+
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{elsarticle-num}
+\newcommand{\LA}[1]{{\color{blue}#1}}
+\newcommand{\CV}[1]{{\color{blue}#1}}
+\newcommand{\LP}[1]{{\color{blue}#1}}
+\definecolor{armygreen}{rgb}{0.19, 0.53, 0.43}
+\newcommand{\JP}[1]{{\color{blue}#1}}
+
+\newcommand{\VM}{{V^{}_{\mathcal M}}}
+\newcommand{\VC}{{V^{}_{\mathcal C}}}
+
+\newcommand{\EM}{{E^{}_{\mathcal M}}}
+\newcommand{\EC}{{E^{}_{\mathcal C}}}
+
+\newcommand{\TI}{{\mathcal{T}_i}}
+\newcommand{\TB}{{\mathcal{T}_b}}
+
+\newcommand{\Tm}{{\mathcal T_{\Delta_m}}}
+
+\renewcommand\theadalign{bc}
+\renewcommand\theadfont{\bfseries}
+\renewcommand\theadgape{\Gape[4pt]}
+\renewcommand\cellgape{\Gape[4pt]}
+% \newcommand{\EMC}{{}}
+
+% \usepackage{adjustbox}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows}
+
+\tikzstyle{startstop} = [rectangle, rounded corners, 
+minimum width=1cm, 
+minimum height=1cm,
+text centered, 
+draw=black, 
+fill=red!30]
+
+\tikzstyle{io} = [trapezium, 
+trapezium stretches=true, % A later addition
+trapezium left angle=70, 
+trapezium right angle=110, 
+minimum width=3cm, 
+minimum height=1cm, text centered, 
+draw=black, fill=blue!30]
+
+\tikzstyle{process} = [rectangle, 
+minimum width=3cm, 
+minimum height=1cm, 
+text centered, 
+text width=4cm, 
+draw=black, 
+fill=orange!30]
+
+\tikzstyle{decision} = [diamond, 
+minimum width=3cm, 
+minimum height=1cm, 
+text centered,
+text width=4cm,
+aspect=2,
+draw=black, 
+fill=green!30]
+\tikzstyle{arrow} = [thick,->,>=stealth,  rounded corners]
+
+\title{Drone Coverage Path Planning}
+
+
+% Use the \authfn to add symbols for additional footnotes andi present addresses, if any. Usually start with 1 for notes about author contributions; then continuing with 2 etc if any author has a different present address.
+
+
+
+\author[mymainaddress]{Lavinia Amorosi}
+\ead{lavinia.amorosi@uniroma1.it}
+\author[mymainaddress]{Paolo Dell'Olmo}
+\ead{paolo.dellolmo@uniroma1.it}
+\author[mysecondaryaddress]{Justo Puerto}
+\ead{puerto@us.es}
+\author[mysecondaryaddress]{Carlos Valverde \corref{mycorrespondingauthor}}
+\ead{cvalverde@us.es}
+
+
+
+\address[mymainaddress]{Department of Statistical Sciences, Sapienza University of Rome, Italy}
+\address[mysecondaryaddress]{Department of Statistical Sciences and Operational Research, University of Seville, Spain}
+
+
+\cortext[mycorrespondingauthor]{Corresponding author}
+
+
+
+\begin{document}
+
+
+\begin{frontmatter}
+
+
+\begin{abstract}
+We present a second order cone mixed-integer programming formulation for a monitoring system based on one drone that moves freely in the space. We assume to have a set of not overlapping areas in the plane to be covered, represented by polygons, and one depot. The problem consists in finding the set of tours starting and ending at the depot the drone must perform in order to cover all the areas under analysis, taking into account its limited endurance. The proposed formulation embeds the drone altitude selection from a set of possible values associated with each area. This is motivated by the necessity to inspect each area with different levels of precision. Moreover, it is assumed that there is a set of points, with limited cardinality, associated with each area, from where the drone can interrupt the monitoring and exit to reach another area where the same process can be repeated. When the drone attains its minimum energy level, it must go back to the depot to swap battery and start a new tour, until all the areas have been covered. The optimization is performed by minimizing the total completion time. Preliminary computational results on a testbed of artificial instances are presented together an analysis of the obtained solutions.
+\end{abstract}
+\begin{keyword}
+Monitoring system,  Mixed-Integer Quadratic Programming, UAVs, 
+\end{keyword}
+
+\end{frontmatter}
+\section{Introduction}
+The optimization of  Unmanned aerial vehicles (UAVs) or drones operations is inherently multifaceted. It involves critical tasks such as path planning, resource allocation, energy management, and collision avoidance in increasingly crowded airspaces. For instance, determining the optimal route for a drone to cover a designated area while minimizing energy consumption and avoiding obstacles involves solving complex combinatorial and continuous optimization problems. Furthermore, when multiple drones are deployed simultaneously, issues of coordination and scheduling add an extra layer of complexity, necessitating robust algorithms capable of handling dynamic environmental conditions and regulatory constraints.
+
+Indeed, drones have been successfully adopted in different contexts. For example, in disaster management (\cite{art:Chiaraviglio19}, \cite{art:shi2024}), in telecommunication for providing 5G coverage of rural zones \cite{art:Amorosi19}, for inspecting graphs located in the plane  (\cite{art:Amorosi2024}, \cite{art:Amorosi2021}, \cite{art:Amorosi2023}). Other applications include 3D mapping and video surveillance \cite{art:Nexand14}, agriculture for monitoring crop growth \cite{art:Tokekaretal16}, and many others (see \cite{art:Otto18} for a survey of civil use of UAVs). 
+
+In this paper we focus on coverage of areas in the plane and present in the next section a biref state of the art for this problem.
+
+
+\section{State of the art}
+The coverage path planning problem (CPP) has been studied widely in the literature.
+
+A general survey of CPP problems, also related to drone characteristics and including a taxonomy of CPP algorithms, is presented in \cite{Sonawane2023}.
+
+
+In \cite{Ahmed2024} the authors propose a mathematical model and a heurisitc algorithm  for energy-efficient multi-UAV multi-region CPP to generate appropriate paths that cover multiple disjoint regions, aiming to minimize overall energy consumption. They adopt  a back-and-forth strategy to generate intra-region path patterns with minimum turns and propose a smoothing turns approach  based on Bezier curves to effectively reduce an energy consumption due to taking turns.  The optimization procedure is in two phases: each region is fully explored and then inter region routing problem is solved.
+
+In \cite{Mu2023} the problem of coverage a rectangular region with forbidden areas by means of an improved back and forth algorithm incorporating  the straight-turn mode.
+
+
+In \cite{Tripipicchio2023} an approach for generating a navigation trajectory for UAVs fulfilling the requirements of coverage path planning  with the aim of reducing the timing of the flight and the memory footprint embedded into the vehicles is proposed. They start generating waypoints of polygonal areas and analyse existing CPP methods and select an algorithm for a smoothing approach. 
+
+
+The authors in \cite{art:VAZQUEZ} present a coverage path planning method for a spraying drone that can disinfect areas. Indeed, there are few differences with this CPP with standard CPP problems both technical details of the UAV and for the trajectories that must be followed. The method is experimented on realistic disinfection scenarios.
+ 
+ 
+In \cite{art:Wang2024} it is presented a two-stage method to cover mixed regions with limited energy. A set of drones starts from a common depot It formulates an optimal path by shrinking the perimeter for mixed regions, and successively, dynamic programming  approach is used to segment the overall path for UAVs in order to meet energy limits.
+
+Li et al. in\cite{Li2025} develop a novel approach for designing the trajectory and controlling the velocity for an unmanned aerial vehicle (UAV) to achieve energy-efficient visual coverage of multiple terrestrial regions allowing the UAV to change both its velocity and its flight altitude during its task tour. The problem is solved in a four steps approach using different algorithms.
+
+
+
+
+
+
+\section{Problem Description}\label{section:description}
+In this paper we study a drone coverage path planning problem. Given a set of not overlapping areas to visit, represented by polygons, one drone and one depot, the problem consists in finding the set of tours starting and ending at the depot, the drone must perform in order to cover all the areas under analysis, taking into account its limited endurance. \CV{We assume that every region can be fully covered in a single operation, that is, the drone has enough endurance to be launched from the depot, cover a region, and come back to the depot.}
+
+Let $\mathcal R = \{1, \ldots, R\}$ be the set of regions that must be covered by the drone. We assume that the visit of each of these regions can be performed by the drone at different altitudes following a polygonal chain. The polygonal chain associated with a region can have different shapes. Moreover, the visit of a region can be performed by the drone also with interruptions to move to another region, if this is convenient in terms of drone energy consumption. \CV{The visit of the polygonal chain associated with a region can be performed in both directions}. However, in order to simplify the problem setting, we assume that for each region the number of these interruptions can be at most equal to \CV{$R-1$}. \CV{
+Based on that, associated with each region $r\in\mathcal R$, we define the set $\mathcal I=\{1, \ldots,2R\}$ that represents the different points that must be located in each region, including the two endpoints of the polygonal chain. We can distinguish four sets of points:
+   \begin{itemize}
+        \item $\mathcal I_S=\{1, 2\}$, that represents the first endpoint of the polygonal chain associated with the region $r$. This point can be used as a launching or retrieving point.
+        \item $\mathcal I_L=\{3, 5,\ldots,2R-1\}$, that models the launching points from region $r$.
+        \item $\mathcal I_R=\{4, 6,\ldots, 2R\}$, that models the retrieving points from region $r$.
+        \item $\mathcal I_T=\{2R+1, 2R+2\}$, that reports the last endpoint of the polygonal chain associated with the region $r$. This point can be also a launching or retrieving point.
+    \end{itemize}}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\linewidth]{pictures/set_I.pdf}
+    \caption{Set I}
+    \label{fig:enter-label}
+\end{figure}
+We define the graph \CV{$\mathcal G=(\mathcal V=\{v_0\}\cup \mathcal V',\mathcal E=\mathcal E^{int}\cup\mathcal E^{ext})$}, induced by these sets, where:
+\CV{
+\begin{itemize}
+    \item $v_0=(0,0)$ denotes the depot.
+    \item $\mathcal V'=\mathcal R\times \mathcal I$ represents the set of vertices. This set can be split into $\mathcal V'=\mathcal V_S\cup\mathcal V_L\cup\mathcal V_R\cup\mathcal V_T$, where $\mathcal V_S=\mathcal R\times\mathcal I_S$, $\mathcal V_L=\mathcal R\times\mathcal I_L$, $\mathcal V_R=\mathcal R\times\mathcal I_R$, and $\mathcal V_T=\mathcal R\times\mathcal I_T$.
+    \item $\mathcal E^{int}=\{(v,v'):v=(r,i),v'=(r,i+1), \forall r\in\mathcal R, \forall i\in\mathcal I\setminus\{2R\}\}$ consists of the set of edges that join consecutive points in the same polygonal chain. This set can be decomposed into two subsets, named $\mathcal E_{LR}^{int}, \mathcal E_{RL}^{int}$, that represent the pairs joining consecutive pair of vertices of $\mathcal V_L\rightarrow\mathcal V_{R}$ ($\mathcal V_R\rightarrow\mathcal V_L$, respectively) in each region.
+    \item \CV{$\mathcal E^{ext}=\{(v,v'):\forall v=(r,i)\in \mathcal V\setminus (\mathcal V_{R}\cup\{2,2R+2\}),\forall v'=(r',i')\in\mathcal V\setminus (\mathcal V_L\cup \{1,2R+1\}):r\neq r',\forall i,i'\in\mathcal I\}$} consists of the set of arcs that join points from polygonal chains associated with different regions.
+    \item $\mathcal O$ represents the set of operations. Each operation consists in a tour of the drone starting and ending at the depot $v_0$. 
+\end{itemize}}
+
+For each region $r\in\mathcal R$, we have the set $\mathcal H_r$ of different heights that can be used to inspect the region $r$. In addition, for each height $h\in\mathcal H_r$, we can define a set $\mathcal P_{h}$ containing different shapes of polygonal chains that ensure that the region $r$ is covered. The shape of each polygonal chain $p\in\mathcal P_{h}$ is determined by its segments $\{[Q^s,Q^{s+1}]:s\in\ \mathcal S_p\}$, where $Q^s$ and $Q^{s+1}$ denote the end points of the segment $s$ and $\mathcal S_p=\{1,\ldots,S_p\}$, the set of segments associated with the polygonal chain $p$. \CV{In order to model the problem, we introduce the following sets:
+
+\begin{itemize}
+    \item For each $r\in\mathcal R$, we define the set of polygonal chains $\mathcal T_r=\{(h, p):h\in\mathcal H_r, p\in\mathcal P_h\}.$
+    \item The shape of each polygonal chain $t\in\mathcal T_r$, is determined by its segments $\{[Q^s, Q^{s+1}]:s\in\mathcal S_t\}$, where $Q^s$ and $Q^{s+1}$ denote the end points of the segment $s$ and $\mathcal S_t=\{1,\ldots,S_t\}$, the set of segments associated with the polygonal chain $t$.
+\end{itemize}
+
+}
+
+We assume that air density, denoted by $\rho$, depends on height as stated in the following function (derived from the ideal gas law):
+$$
+\rho_h=\frac{p_0 M}{C_RT_0}\left(1-\frac{Lh}{T_0}\right)^{\frac{gM}{C_RL}-1},
+$$
+where the constant can be found in the International Standard Atmosphere (ISA) model:
+\begin{itemize}
+    \item $p_0=101325$ Pa: sea level standard atmospheric pressure.
+    \item $T_0=288.15$ K: sea level standard temperature.
+    \item $g=9.80665$ $m/s^2$: earth-surface gravitational acceleration.
+    \item $L=0.0065$ $K/m$: temperature lapse rate.
+    \item $C_R=8.31446$ $J/(mol\cdot K)$: universal gas constant.
+    \item $M=0.0289652$ $kg/mol$: molar mass of dry air.
+\end{itemize}
+
+In addition, we assume that the wind has a constant direction represented by the unitary vector $\vec{u}^w$. The module of the wind speed depends on the height following the formula \cite{heier2014grid}:
+$$
+\nu^w_h=\nu^w_{10}\left(\frac{h}{10}\right)^a,
+$$
+where $\nu^w_{10}$ represents the wind speed at height 10 meters and $a$ is the Hellmann exponent, that depends upon the coastal location, the shape of the terrain on the ground, and the stability of the air. Hence, the vector of the wind speed is given by $\vec{\nu}_h^w=\nu^w_h \vec{u}^w$.
+
+Once we have defined the speed of the wind for each altitude, we can compute the speed that  the drone must follow, $\vec{\nu}_h^d$, to reach a specified constant speed $\vec{\nu}$, that is $$\vec{\nu}_h^d = \vec{\nu} - \vec{\nu}_h^w.$$
+
+If the drone moves from one region $r$ to another region $r'$, we compute this speed ($\vec{\nu }_{rr'h}^d$) by taking the direction joining the center of both regions to avoid bilinear terms in the formulation. However, since the polygonal chain that covers the region is fixed a priori (and hence, the direction of its segments), the drone speed can be also computed beforehand. 
+% We shoud add an example here
+
+One key feature of our problem setting is that 
+the drone is not forced to fully explore one region before moving to another one. In contrast, the set of edges $\mathcal E^{ext}$ allows the drone to leave the region not fully covered to explore a different one. 
+
+Other contributions for the CPP propose a two-stage approach, that is,  the optimization procedure fully explores each region and then inter region routing problem is solved.
+
+
+
+It can be seen with some examples that the flying pattern proposed in this article can reduce the length of the tour as opposed to the two-stage approach.
+
+For this purpose, we analyze a specific problem instance showing the difference of the tour lengths of these two approaches.
+
+Suppose to have an instance composed by  one large region which is a regular polygon of $n$ edges of length $l$ and $n$ "unit size" (or drone visibility radius size) small satellite regions external to the regular polygon, each one at a very small distance, let us assume unit distance (or radius distance) for simplicity, from the vertices of the regular polygon. See Figure \ref{fig:Exagon} Let us assume, again for simplicity, that the two approaches require the same path length to cover the regular polygon. The path to cover the satellite regions with our approach would require to leave the polygon in correspondence to each vertex to cover the  satellite region closest to that vertex. The cost of the complete tour would then be the cost to cover the regular polygon plus $n*4$, as me assumed that satellite regions are at distance 1 from the vertices and the flying pattern is one unit internal to the perimeter of the polygon and the drone movement is from the polygon to the satellite region and back. In the two stage approach the cost of the complete tour would be, in the best case, the cost to cover the polygon plus all the movements from one satellite vertex to the closest one. Hence, in the two stage case to cover all the regions the tour length would be the one to cover the polygon plus $(n-1)l$. It is easy to see that the ratio of the difference between the length of this tour with the one obtained with the proposed approach is $(n-1)l/4*n$, and hence can be arbitrarily large for large values of $l$.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{pictures/Exagon.png}
+    \caption{Comparison of two-stage and the proposed approach}
+    \label{fig:Exagon}
+\end{figure}
+
+Indeed, it can be easily shown that the worst case for the two-stage approach concerning  this ratio is obtained when the regular polygon is a triangle and the ratio of the difference of tour lengths is $l/6$.
+
+It has to be noted that our approach does not force the drone path to leave region not completely covered  to move to a different one, but it allows the drone to do this whenever it minimizes the objective function. 
+
+\section{Mathematical Formulation}
+This section presents a mixed-integer quadratic programming formulation for the problem outlined in Section \ref{section:description}. First, we define the constraints that determine the placement of points along the polygonal chain covering each polygon. Next, we establish the constraints governing the sequence of operations performed by the drone. Then, we introduce the distance constraints that model the drone movements. Finally, we specify the constraints related to energy consumption.
+
+We then define the decision variables representing the problem, which are summarized in Table \ref{table:variables1} and Table \ref{table:variables2}.
+
+
+
+\input{tables/table_binary_variables}
+\input{tables/table_continuous_variables}
+
+\subsection{Location constraints}
+To set the coordinates for each point $P_v$ of the graph, we define two family of variables. The first family of binary variables, $\mu_v^s$, decides which segment $s$ of the polygonal chain is selected for the vertex $v$. Once a segment $s$ is chosen, the second family of continuous variables, $\gamma_v\in [0,1]$, represents $P_v$ as a linear combination of the endpoints of the segment $s$. Putting all together, the following constraints determine the location of $P_v$:
+\begin{align*}
+    P_v&=\sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_h} \sum_{s\in\mathcal S_p}\mu_{v}^s\left[(1-\gamma_v)Q^s+\gamma_v Q^{s+1}\right],&\forall v=(r,i)\in\mathcal V',\label{eq:location_1}\tag{$Loc-C_1$}\\
+    \sum_{s\in\mathcal S_p}\mu_{v}^s&=\alpha_{p},&\forall v=(r,i)\in\mathcal V', \forall h \in \mathcal H_{r},\forall p\in\mathcal P_h,\label{eq:location_2}\tag{$Loc-C_2$}\\
+    \sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_{h}} \alpha_{p}&=1,&\forall r \in\mathcal R.\label{eq:location_3}\tag{$Loc-C_3$}
+\end{align*}
+Constraints \eqref{eq:location_2} describe the binary variable $\alpha_{p}$, that attains value one if we select the polygonal shape $p$ for the region $r$. Constraints \eqref{eq:location_3} ensure that a polygonal shape must be selected for each region $r$.
+
+Once points are represented by means of variables $\mu$ and $\gamma$, we can order these points by defining a continuous variable $\lambda_v\in[0,S_p]$ that gives the global parameterisation of the vertex $v$ in the polygonal chain $p$ assigned to region $r$. The following constraints set the values of these variables:
+\begin{align*}
+    \lambda_{v}&=\sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_h}\sum_{s\in\mathcal S_p}(s-1)\mu_{v}^s + \gamma_v,&\quad\forall v=(r,i)\in\mathcal V',\label{eq:location_4}\tag{$Loc-C_4$}\\
+    \lambda_{v}&=0,&\quad\forall v=(r,1), (r,2):r\in\mathcal R,\label{eq:location_5}\tag{$Loc-C_5$}\\
+    \lambda_{v}&\leq \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \CV{\mathcal E_{RL}^{int}\cup \mathcal E_{RL}^S\cup \mathcal E_{RL}^T},\label{eq:location_6}\tag{$Loc-C_6$}\\
+    \lambda_{v}&= \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \CV{\mathcal E_{LR}^{int}\cup\mathcal E_{LR}^S\cup \mathcal E_{LR}^T,}\label{eq:location_7}\tag{$Loc-C_7$}\\
+    \lambda_{v}&=\sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_h}\alpha_{p}S_p,&\quad\forall v=(r,2R+1), (r, 2R+2):r\in\mathcal R.\label{eq:location_8}\tag{$Loc-C_8$}
+\end{align*}
+Constraints \eqref{eq:location_4} define the values of $\lambda_v$ in relation with the selected segment $s$ and the fraction of this segment that is traversed. Constraints \eqref{eq:location_5} ensure that the starting points of the polygonal chain correspond to the vertices $(r,1)$ and $(r, 2)$. Constraints \eqref{eq:location_6} say that the sequence of points that are located in the polygonal chain is ordered. Restrictions \eqref{eq:location_7} state that the retrieving Finally, the constraints \eqref{eq:location_8} guarantee that the value of $\lambda$ for the vertices $(r, 2R+1)$ and $(r, 2R+2)$ correspond to the end points of the polygonal chain.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{to_find_ourselves.png}
+    \caption{Parameterization of vertices}
+    \label{fig:enter-label}
+\end{figure}
+
+\subsection{Drone path constraints}
+In this subsection, we describe the set of constraints related to the operations that the drone must perform to visit all vertices described in $\mathcal V'$. In this context, we define four families of variables that model the path. Let $x_{vv'}^o$ be a binary variable that is one if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. Let $y_v^o$ be a binary variable that is one if the vertex $v$ is visited during the operation $o$. Let also $\zeta^o$ be a binary variable that is one if all vertices are visited before starting the operation $o$. Finally, we count the number of vertices visited in operation $o$ by means of the integer variable $k^o$.
+
+\begin{align*}
+\sum_{v'\in \mathcal V} x_{v_0v'}^{o}&=1-\zeta^o,&\quad \forall o\in\mathcal O,\label{eq:drone_path_1}\tag{$D_{path}-C_1$}\\
+\sum_{v'\in\mathcal V} x_{v'v}^{o}-\sum_{v'\in\mathcal V}x_{vv'}^{o}&=0,&\quad\forall v\in\mathcal V',\forall o\in\mathcal O,\label{eq:drone_path_2}\tag{$D_{path}-C_2$}\\
+\sum_{v'\in\mathcal V} x_{v'v_0}^{o}&=1-\zeta^o,&\quad\forall o\in\mathcal O,\label{eq:drone_path_3}\tag{$D_{path}-C_3$}\\
+\sum_{v'\in\mathcal V} x_{vv'}^o&=y_{v}^o,&\quad\forall v\in\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_4}\tag{$D_{path}-C_4$}\\
+\sum_{v'\in\mathcal V} x_{v'v}^o&=y_{v}^o,&\quad\forall v\in\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_5}\tag{$D_{path}-C_5$}\\
+\sum_{o\in\mathcal O}y_v^o&=1,&\quad\forall v\in\mathcal V',\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
+\sum_{v,v'\in \mathcal V''} x_{vv'}^o&\leq |\mathcal V''|-1,&\forall \mathcal V''\subseteq\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_7}\tag{$D_{path}-C_7$}\\
+\sum_{o\in\mathcal O} x_{vv'}^o &= 1, &\forall v,v'\in\mathcal V':(v,v')\in\CV{\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^ S\cup\mathcal E_{RL}^T}\label{eq:drone_path_8}\tag{$D_{path}-C_8$}. 
+% u_v^o-u_{v'}^o + 1&\leq (k^o-1)(1-x_{vv'}^o)&\quad\forall v,v'\in\mathcal V\setminus\{(0,0)\}:v \neq v',\forall o\in\mathcal O,\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
+% \sum_{o, o' \in \mathcal O}(x_{vv'}^o+x_{v'v}^{o'})&\geq 1,&\forall v,v'\in\mathcal V':(v,v')\in \mathcal A^{int}, v<_{lex} v '.\label{eq:drone_path_7}\tag{$D_{path}-C_7$}
+\end{align*}
+Constraints \eqref{eq:drone_path_1} ensure that the drone exits from the depot if there is a vertex that is not already visited in operation $o$. Constraints \eqref{eq:drone_path_2} are the flow conservation constraints. Constraints \eqref{eq:drone_path_3} guarantee that drone operation ends in the depot if there is a vertex that has not been visited in operation $o$. Constraints \eqref{eq:drone_path_4} and \eqref{eq:drone_path_5} ensure that the vertex $v$ is visited if there is a path passing through this vertex. Constraints \eqref{eq:drone_path_6} impose that every vertex must be visited in some operation. Inequalities \eqref{eq:drone_path_7} represent the subtour elimination constraints for each tour made in each operation. Finally, constraints \eqref{eq:drone_path_8}
+guarantee that each polygonal chain is completed traversed. They impose that all the edges of the path graph associated with each region are traversed in some operation.
+
+\subsubsection*{Valid Inequalities}
+In this subsection, we present a set of valid inequalities for the representation of the drone path that are included in the formulation to enhance it. Let $\zeta^o$ be a binary variable that takes the value of one if all vertices have been visited before starting the operation $o$, and zero otherwise. If this is the case, then all vertices must also be visited before the operation $o+1$. Therefore, the $\zeta$ variables must satisfy the following monotonicity constraint:
+
+\begin{equation}\label{eq:mon}\tag{Monotonicity}
+\zeta^o\leq \zeta^{o+1},\quad\forall o\in\mathcal O\setminus\{O\}.
+\end{equation}
+
+We define $k^o$ as the number of vertices visited during the operation $o$, excluding the depot. The variables $y$ can be used to determine this quantity, where we recall that $y_v^{o}$ equals one if the vertex $v$ is visited in operation $o$. Thus:
+
+\begin{equation}\label{eq:k}\tag{$k-C$}
+k^o=\sum_{v\in\mathcal V'} y_{v}^o, \quad\forall o\in\mathcal O.
+\end{equation}
+
+If $\zeta^o$ is equal to one, it implies that all vertices in $\mathcal V'$ must have been visited in previous operations. This relationship is enforced through the following inequality:
+
+\begin{equation}\label{eq:VI-1}\tag{$VI-C_1$}
+\sum_{o'=1}^{o-1} k^{o'}\geq |\mathcal V'| \zeta^o,\quad\forall o\in\mathcal O.
+\end{equation}
+
+To refine the feasible solution space, we assume, without loss of generality, that an operation $o$ cannot consists in remaining at the depot, if there are still targets left to visit. This requirement is ensured by the following constraint:
+
+\begin{equation}\label{eq:VI-2}\tag{$VI-C_2$}
+k^o\geq 1-\zeta^o,\quad\forall o\in\mathcal O.
+\end{equation}
+
+
+\subsection{Distance constraints}
+This subsection is devoted to computing the distance between any pair of vertices of the graph. The reader may note that these distances must be modelled using continuous variables, since the location of the points is not fixed in the polygonal chains representing the regions.
+
+Firstly, we compute the distance between two points that belong to the same polygonal chain. For every $v, v'\in\mathcal V'$ such that $(v,v')\in\mathcal E_{RL}^{int}$, the distance inside the polygonal chain is represented by the following expressions:
+\begin{equation*}
+ d_{vv'}^{ss'}= \left \{\begin{array}{lr}
+ (\gamma_{v'}-\gamma_v) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}], \\
+(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} L(s'')+\gamma_{v'} L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}], 
+ \end{array} \right.
+\end{equation*}
+where $L(s)=\|Q^{s+1}-Q^s||_2$ denotes the length of the segment $s$. The reader may note that for the cases where $v>_{lex} v'$, we can set $d_{vv'}^{ss'}=d_{v'v}^{ss'}$ to obtain the same value for the symmetric case. 
+The expression above can be rewritten by means of $\mu$ variables as follows:
+\begin{equation*}\label{eq:distance_1}\tag{$Dist-C_1$}
+    d_{vv'}^{ss'}=\left \{\begin{array}{lr} \mu_v^s\mu_{v'}^{s}\left[(\gamma_{v'}-\gamma_v)L(s)\right]+\mu_v^s\mu_{v'}^{s'}\left[(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} L(s'')+\gamma_{v'} L(s')\right], & \mbox{if } v <_{lex} v'\\
+    d_{v'v}^{ss'}, & \mbox{if } v >_{lex} v'\end{array}\right. 
+\end{equation*}
+\\
+Hence, since each vertex is only assigned to a single segment by \eqref{eq:location_2} and \eqref{eq:location_3}, the distance between $v$ and $v'$ is given by:
+\begin{equation*}\label{eq:distance_2}\tag{$Dist-C_2$}    
+d_{vv'}=\sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_h}\sum_{s, s'\in\mathcal S_p}d_{vv'}^{ss'},\quad \forall v, v'\in\mathcal V': (v,v')\in\mathcal E_{RL}^{int}.
+\end{equation*}
+
+Secondly, we compute the distance between vertices of different regions. In that case, we assume that drone movement is decomposed into two parts: horizontal movement in the plane $OXY$ and vertical movement on the axis $OZ$. We denote by $d_{vv'}^{xy}$ and $d_{vv'}^z$ the continuous variables that represent the horizontal and vertical distances travelled by the drone to go from $P_v$ to $P_{v'}$, respectively. Thus, the constraints that compute the total distance are the following:
+\begin{align*}
+    d_{vv'}&=d_{vv'}^{xy}+d_{vv'}^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_3}\tag{$Dist-C_3$}\\
+    d_{vv'}^{xy}&\geq\|(P_v^x,P_v^y,0)-(P_{v'}^x,P_{v'}^y,0)\|_2,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_4}\tag{$Dist-C_4$}\\
+    d_{vv'}^z&\geq P_v^z - P_{v'}^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_5}\tag{$Dist-C_5$}\\
+    d_{vv'}^z&\geq P_{v'}^z - P_v^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext}.\label{eq:distance_6}\tag{$Dist-C_6$}
+\end{align*}
+Here, we denote the coordinates of $P_v$ as $P_v=(P_v^x,P_v^y,P_v^z)$. Constraint \eqref{eq:distance_3} computes the total distance of the horizontal and vertical components. The horizontal distance, $d^{xy}$, is computed as the Euclidean distance by means of second-order cone constraints \eqref{eq:distance_4}. The vertical distance, $d^z$, is calculated by taken the absolute value of the difference of the third components that is linearised by using the constraints \eqref{eq:distance_5} and \eqref{eq:distance_6}.
+\begin{comment}
+
+$\forall v=(r,i), v'=(r,i+1), p \in \mathcal P_r, s ,s' \in \mathcal S_p$
+\begin{equation}
+ d_{vv'} = \sum_{s, s' \in \mathcal P_r} \beta_{vv'}^{ss'}  d_{vv'}^{ss'}
+ \end{equation}
+\begin{equation*}\label{eq:distance_1}\tag{$Dist-C_1$}
+    d_{vv'}=\sum_{p\in\mathcal P_r}\sum_{s,s'\in\mathcal S_p}\left[\beta_{v}^{ss}(\gamma_{v'}-\gamma_v)\mathcal L(s)+\beta_{v}^{ss'}\left[(1-\gamma_v)\mathcal L(s)+\sum_{s''\in[s+1,s'-1]}\mathcal L(s'')+\gamma_{v'}\mathcal L(s')\right]\right]
+\end{equation*}
+where $\beta_{v}^{ss'}=\mu_{v}^s\mu_{v'}^{s'}$, $v=(r,i)$, $v'=(r,i+1)$.
+
+
+\begin{align*}
+    \beta_{vv'}^{ss'} &\leq \mu_{v}^s,&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p,\label{eq:beta_1}\tag{$\beta-C_1$}\\
+    \beta_{vv'}^{ss'} &\leq \mu_{v'}^{s'},&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p,\label{eq:beta_2}\tag{$\beta-C_2$}\\
+    \beta_{vv'}^{ss'} &\geq \mu_{v}^s + \mu_{v'}^{s'} - 1 ,&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p\label{eq:beta_3}\tag{$\beta-C_3$},
+\end{align*}
+\end{comment}
+
+\subsection{Consumption constraints}
+In our model, we assume that the drone has a limited endurance, denoted by $W^{max}$, to perform each operation. The consumption is computed by using the drag force formula, whose general expression is:
+$$
+w = \frac{1}{2}Ac\rho\nu d,
+$$
+where $A$ and $c$ denote the front surface and the drag coefficient of the drone, respectively; $\rho$ represents the air density; $\nu$, the speed of the drone (dependent on the height), and $d$, the distance travelled.
+Similarly to what has been done for expressing the distance between vertices, we first distinguish the case in which they belong to the same region to the one in which they belong to different regions.
+
+\subsubsection{Consumption between vertices of the same region}
+
+If the two vertices belong to the same region we can express the drone energy consumption as follows:
+% \begin{equation*}
+%     w_{vv'}=E^{xy}\left(\sum_{p\in \mathcal P_h}\rho_{p}\alpha_p\right)\sum_{s,s'\in\mathcal S_p}|\vec{\nu}_{vv'}^{ss'd}|d_{vv'}^{ss'},\quad\forall v, v'\in\mathcal V:(v,v')\in \mathcal A^{\text{int}}\label{eq:consumption_1}\tag{$Consumption-C_1$},\\
+% \end{equation*}    
+
+If $v <_{lex} v'$
+\begin{scriptsize}
+\begin{equation*}
+ w_{vv'}^{ss'}= \left \{\begin{array}{lr}
+ E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v'}-\gamma_v) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}], \\
+E^{xy}\rho_s|\vec{\nu}_{s}^d|(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|\gamma_{v'} L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}], 
+ \end{array} \right.
+\end{equation*}
+\end{scriptsize}
+
+If $v >_{lex} v'$
+
+\begin{scriptsize}
+\begin{equation*}
+ w_{vv'}^{ss'}= \left \{\begin{array}{lr}
+ E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v}-\gamma_{v'}) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}], \\
+E^{xy}\rho_s|\vec{\nu}_{s}^d|\gamma_v L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|(1-\gamma_{v'}) L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}], 
+ \end{array} \right.
+\end{equation*}
+\end{scriptsize}
+
+where $E^{xy}=\frac{1}{2}cA$ and $\vec{\nu}_{s}^d$ is the drone speed to traverse segment $s$ of the polygonal chain. This speed is computed beforehand as:
+
+\begin{equation*}
+    \vec{\nu}_{s}^d = \left \{\begin{array}{lr}
+    \nu_0 \frac{Q^{s+1}-Q^{s}}{\|Q^{s+1}-Q^{s}\|} - \vec{\nu_{h}^w}, & \mbox{if } v<_{lex} v',\\
+    \nu_0 \frac{Q^{s}-Q^{s+1}}{\|Q^{s}-Q^{s+1}\|} - \vec{\nu_{h}^w}, & \mbox{if } v>_{lex} v'.\end{array}\right.
+\end{equation*}
+
+The expression above can be rewritten by means of the $\mu$ variables:
+
+\begin{scriptsize}
+\begin{equation*}\label{eq:consumption_1}\tag{$w-C_1$}
+    w_{vv'}^{ss'}=\left\{\begin{array}{lr}
+    \mu_v^s\mu_{v'}^{s}E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v'}-\gamma_v) L(s)+\mu_v^s\mu_{v'}^{s'}\left[E^{xy}\rho_s|\vec{\nu}_{s}^d|(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|\gamma_{v'} L(s')\right], & \mbox{if } v <_{lex} v',\\
+    \mu_v^s\mu_{v'}^{s}E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v}-\gamma_{v'}) L(s)+\mu_v^s\mu_{v'}^{s'}\left[E^{xy}\rho_s|\vec{\nu}_{s}^d|\gamma_v L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|(1-\gamma_{v'}) L(s')\right], & \mbox{if } v >_{lex} v',
+    \end{array}\right.
+\end{equation*}
+\end{scriptsize}
+
+Since each vertex is only assigned to a single segment, the drone energy consumption between vertex $v$ and vertex $v'$ is given by:
+
+\begin{equation*}\label{eq:consumption_2}\tag{$w-C_2$}
+w_{vv'}=\sum_{h\in\mathcal H_r}\sum_{p\in\mathcal P_h}\sum_{s, s'\in\mathcal S_p}w_{vv'}^{ss'},\quad \forall v, v'\in\mathcal V': (v,v')\in\mathcal E^{int}.
+\end{equation*}
+
+\subsubsection{Consumption between vertices from different regions}
+
+If the two vertices belong to different regions, we need to introduce the binary variable $\varphi_{rr'}$ that takes the value of one if the height selected to move the drone from region $r$ to region $r^'$ is the one adopted to visit region $r$. Based on that, the energy consumption also depends on the relation between the height selected to visit region $r$ (denoted by $h_r$) and the one selected to visit region $r^'$ (denoted by $h_{r^'}$). For this reason we need also to define the binary variable $\psi_{rr'}$ that takes value one if $h_r < h_{r^'}$. Thus, the drone energy consumption can be expressed as follows:
+
+
+\begin{footnotesize}
+\begin{align*} \label{eq:consumption_3}\tag{$w-C_3$}   
+    w_{vv'}=&
+    %\varphi_{rr'}^1\left(E^{xy}d_{vv'}^{xy}\rho_{0}\nu_{rr'0}^{xy}+E^z\left(\sum_{p\in\mathcal P_r}\alpha_{p} h_p-h_0\right)\frac{1}{2}\left(\rho_0+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right)+\\
+     \varphi_{rr'}\left(E^{xy}d_{vv'}^{xy}\sum_{h\in \mathcal H_r}\sum_{p\in\mathcal P_h}\alpha_p\rho_p|\vec\nu_{rr'h}^{d}|+E^z\psi_{rr'}d_{vv'}^z\frac{1}{2}\left(\sum_{p\in\mathcal P_{r}}\alpha_{p}\rho_{p}+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right)+\\
+    +& (1-\varphi_{rr'})\left(E^{xy}d_{vv'}^{xy}\sum_{h\in \mathcal H_{r'}}\sum_{p\in\mathcal P_h}\alpha_p\rho_p|\vec\nu_{rr'h}^{d}|+E^z(1-\psi_{rr'})d_{vv'}^z\frac{1}{2}\left(\sum_{p\in\mathcal P_{r}}\alpha_{p}\rho_{p}+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right)+\\
+    %+&\varphi_{rr'}^4\left(E^{xy}d_{vv'}^{xy}\rho_{H}\nu_{rr'H}^{xy}+E^z\left(h_H-\sum_{p\in\mathcal P_r}\alpha_{p} h_p\right)\frac{1}{2}\left(\rho_H+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right).\\
+\end{align*}
+\end{footnotesize}
+%$$
+%P_v^z=\sum_{h\in\mathcal %H_r}\sum_{p\in\mathcal P_h} h\alpha_p
+%$$
+
+%$$
+%\varphi_{rr'} = 1 \mbox{ if we select the height of } r
+%$$
+
+%$$
+%\psi_{rr'} = 1 \mbox{ if } h_r < h_{r'}.
+%$$
+
+
+where $E^{xy}=\frac{1}{2}cA$, $E^{z}=\frac{1}{2}cA$, are constants representing the characteristics of the drone, and $\nu^z$ defines the module of the vertical speed of the drone.\\
+
+Based on the previous expressions, we can introduce the last set of constraints, imposing that the drone energy consumption associated with each operation $o$ is not greater than the its maximum endurance $W_{max}$:
+
+%\begin{equation*}\label{eq:endurance}\tag{$Endurance$}
+%\sum_{(v,v^') \in \mathcal A} w_{vv'}x_{vv'}^o \leq W^{max} %&\quad \forall o \in \mathcal O
+%\end{equation*}
+
+\begin{equation*}\label{eq:endurance}\tag{$Endurance$}
+\sum_{(v,v^') \in \mathcal E} w_{vv'}x_{vv'}^o \leq W^{max} \quad \forall o \in \mathcal O
+\end{equation*}
+
+
+\begin{comment}
+\subsubsection{Amorosi assumptions}
+\tiny
+\begin{align*}    
+    w^0_{vv'}&=w_{vv'}^{0xy}+w_{vv'}^{0z},&\quad v=(0,0),\forall v'\in\mathcal V\label{eq:consumption_1}\tag{$Consumption-C_1$},\\
+    w_{vv'}^{0xy}&=E^{xy}\rho_0d_{vv'}^{xy}=w_{v'v}^{xy},&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_2}\tag{$Consumption-C_2$},\\
+    w_{vv'}^{0z}&=\frac{1}{2} E^z  \left(\rho_0 + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z,&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_4}\tag{$Consumption-C_4$},\\
+    w_{v'v}^{0z}&=0,&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
+    w_{vv'}&=\min\left\{E^{xy}\rho_0d_{vv'}^{xy}+\frac{1}{2}E^z\left(\rho_0+\sum_{p'\in\mathcal P_{r'}}\rho_{p'}\alpha_{p'}\right)\left(\sum_{p'\in\mathcal P_{r'}} h_{p'}\alpha_{p'}-h_0\right), E^{xy}\min\left\{\sum_{p\in \mathcal P_r}\rho_{p}\alpha_p, \sum_{p'\in \mathcal P_{r'}}\rho_{p'}\alpha_{p'}\right\}d_{vv'}^{xy}+\frac{1}{2} E^z  \left(\sum_{p\in \mathcal P_r}\rho_{h}\alpha_p + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z\right\}\\
+    % w_{vv'}^{z}&=\frac{1}{2} E^z  \left(\sum_{p\in \mathcal P_r}\rho_{h}\alpha_p + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z,&\quad\forall v=(r, i),v'=(r',i')\in\mathcal V\setminus\{(0,0)\}\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
+    W^o&=\sum_{v,v'}x_{vv'}^ow_{vv'},&\quad\forall v,v'\in\mathcal V\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
+    W^o&\leq endurance,&\quad\forall v,v'\in\mathcal V\label{eq:consumption_6}\tag{$Consumption-C_6$}.
+\end{align*}
+\end{comment}
+\subsection{Formulation}
+The complete formulation of the CPP follows:
+\begin{mini*}[4]
+        {}{W=\sum_{v, v'\in\mathcal V}\sum_{o\in\mathcal O} d_{vv'}x_{vv'}^o}
+        {}{}\label{form:formulation}\tag{Formulation}
+        \addConstraint{\eqref{eq:drone_path_1}-\eqref{eq:drone_path_7}}{}
+        \addConstraint{\eqref{eq:mon}, \eqref{eq:k},\eqref{eq:VI-1}-\eqref{eq:VI-2}}{}
+        \addConstraint{\eqref{eq:location_1}-\eqref{eq:location_7}}{}
+        \addConstraint{\eqref{eq:distance_1}-\eqref{eq:distance_6}}{}
+        %\addConstraint{\eqref{eq:beta_1}-\eqref{eq:beta_3}}{}
+        \addConstraint{\eqref{eq:consumption_1}-\eqref{eq:consumption_3}}
+        \addConstraint{\eqref{eq:endurance}}
+\end{mini*}
+
+\section{Computational Experiments}
+
+
+\newpage
+\bibliography{mybib}
+
+\end{document}
+

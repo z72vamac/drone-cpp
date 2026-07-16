@@ -1,0 +1,42 @@
+{
+  "endurance": 120,
+  "elapsed_s": "600",
+  "gap_pct": "33.5",
+  "nodes": 46641,
+  "status": 9,
+  "obj": "585.0",
+  "n_ops": 1,
+  "ops_detail": "[[0, 25]]",
+  "chain_sel": "{\"R0\": \"ch0\", \"R1\": \"ch0\", \"R2\": \"ch0\"}",
+  "total_chain_len": "223.3",
+  "edges_per_op": [
+    [
+      "(V(r-1,START0), V(r1,START1))",
+      "(V(r0,START1), V(r0,START2))",
+      "(V(r0,START2), V(r0,LAUNCH3))",
+      "(V(r0,LAUNCH3), V(r0,RETRIEVE4))",
+      "(V(r0,RETRIEVE4), V(r0,LAUNCH5))",
+      "(V(r0,LAUNCH5), V(r0,RETRIEVE6))",
+      "(V(r0,RETRIEVE6), V(r0,END7))",
+      "(V(r0,END7), V(r0,END8))",
+      "(V(r0,END8), V(r1,RETRIEVE4))",
+      "(V(r1,START1), V(r1,START2))",
+      "(V(r1,START2), V(r1,LAUNCH3))",
+      "(V(r1,LAUNCH3), V(r2,START1))",
+      "(V(r1,RETRIEVE4), V(r1,LAUNCH5))",
+      "(V(r1,LAUNCH5), V(r1,RETRIEVE6))",
+      "(V(r1,RETRIEVE6), V(r1,END7))",
+      "(V(r1,END7), V(r1,END8))",
+      "(V(r1,END8), V(r-1,START0))",
+      "(V(r2,START1), V(r2,START2))",
+      "(V(r2,START2), V(r2,LAUNCH3))",
+      "(V(r2,LAUNCH3), V(r2,RETRIEVE4))",
+      "(V(r2,RETRIEVE4), V(r2,LAUNCH5))",
+      "(V(r2,LAUNCH5), V(r2,RETRIEVE6))",
+      "(V(r2,RETRIEVE6), V(r2,END7))",
+      "(V(r2,END7), V(r2,END8))",
+      "(V(r2,END8), V(r0,START1))"
+    ]
+  ],
+  "total_chain_len_m": 223.33540810653395
+}
