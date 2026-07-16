@@ -604,5 +604,12 @@ class CPPModel:
                 for ti in range(len(r.chains)):
                     if (r.id, ti) in self.alpha and self.alpha[(r.id, ti)].X > .5:
                         cs[r.id] = ti
-            return Solution(ops, self.model.ObjVal, vp, cs, vertex_lambdas=vl)
+            status_name = {2: "OPTIMAL", 3: "INFEASIBLE", 8: "TIME_LIMIT",
+                           9: "SUBOPTIMAL", 11: "INTERRUPTED"}.get(st, str(st))
+            return Solution(
+                ops, self.model.ObjVal, vp, cs, vertex_lambdas=vl,
+                solve_time=getattr(self.model, "Runtime", None),
+                mip_gap=getattr(self.model, "MIPGap", None),
+                status=status_name,
+            )
         return None

@@ -104,33 +104,18 @@ class InstanceGenerator:
         )
 
     @staticmethod
-    def _generate_spiral_chain(boundary: List[Point3D], height: float,
-                                region_id: int, chain_idx: int,
-                                rng: np.random.RandomState,
-                                spacing: float) -> Optional[PolygonalChain]:
-        if len(boundary) < 3:
-            return None
+    def _spiral_segments(boundary: List[Point3D], height: float,
+                         scales: List[float]) -> List[Segment]:
+        """Build zig-zag spiral segments for the boundary at the given scales.
 
+        Each scale lives on a level scaled towards the centroid; consecutive
+        levels are connected through vertex 0 to form a continuous chain. Odd
+        levels are traversed in reverse order to obtain a zig-zag pattern.
+        """
         pts = np.array([[p.x, p.y] for p in boundary])
         centroid = pts.mean(axis=0)
         n = len(pts)
-
-        radii = np.linalg.norm(pts - centroid, axis=1)
-        max_radius = radii.max()
-        min_radius = radii.min()
-        num_levels = max(1, int(max_radius / spacing))
-
-        scales = []
-        for k in range(num_levels + 1):
-            s = 1.0 - k * spacing / max_radius
-            if s <= 0.0:
-                break
-            scales.append(s)
-
-        if len(scales) < 2:
-            return None
-
-        segments = []
+        segments: List[Segment] = []
         for k, s in enumerate(scales):
             level = centroid + (pts - centroid) * s
             z = height
@@ -144,16 +129,39 @@ class InstanceGenerator:
                     Point3D(float(level[j, 0]), float(level[j, 1]), z),
                     Point3D(float(level[j_next, 0]), float(level[j_next, 1]), z)
                 ))
-
             if k < len(scales) - 1:
                 next_level = centroid + (pts - centroid) * scales[k + 1]
-                same_vertex = 0
                 segments.append(Segment(
-                    Point3D(float(level[same_vertex, 0]), float(level[same_vertex, 1]), z),
-                    Point3D(float(next_level[same_vertex, 0]),
-                            float(next_level[same_vertex, 1]), z)
+                    Point3D(float(level[0, 0]), float(level[0, 1]), z),
+                    Point3D(float(next_level[0, 0]),
+                            float(next_level[0, 1]), z)
                 ))
+        return segments
 
+    @staticmethod
+    def _generate_spiral_chain(boundary: List[Point3D], height: float,
+                                region_id: int, chain_idx: int,
+                                rng: np.random.RandomState,
+                                spacing: float) -> Optional[PolygonalChain]:
+        if len(boundary) < 3:
+            return None
+
+        pts = np.array([[p.x, p.y] for p in boundary])
+        centroid = pts.mean(axis=0)
+        max_radius = np.linalg.norm(pts - centroid, axis=1).max()
+        num_levels = max(1, int(max_radius / spacing))
+
+        scales: List[float] = []
+        for k in range(num_levels + 1):
+            s = 1.0 - k * spacing / max_radius
+            if s <= 0.0:
+                break
+            scales.append(s)
+
+        if len(scales) < 2:
+            return None
+
+        segments = InstanceGenerator._spiral_segments(boundary, height, scales)
         if len(segments) < 2:
             return None
 
@@ -212,10 +220,9 @@ class InstanceGenerator:
             region_heights = {r.id: 15.0 + r.id * 25.0 for r in base_inst.regions}
         regions = []
         for r in base_inst.regions:
-            bpts = [Point3D(p.x, p.y) for p in r.boundary]
-            centroid = np.array([[p.x, p.y] for p in r.boundary]).mean(axis=0)
-            max_radius = max(np.linalg.norm([p.x - centroid[0], p.y - centroid[1]]) for p in r.boundary)
-            n_edges = len(bpts)
+            bpts = r.boundary
+            centroid = np.array([[p.x, p.y] for p in bpts]).mean(axis=0)
+            max_radius = max(np.linalg.norm([p.x - centroid[0], p.y - centroid[1]]) for p in bpts)
             target_h = region_heights[r.id]
             new_chains = []
             for c_idx, chain in enumerate(r.chains):
@@ -225,31 +232,13 @@ class InstanceGenerator:
                 spacing = base_spacing * (h / ref_height)
                 s_max = max(0.1, 1.0 - h / h_cone)
                 num_levels = max(1, int(s_max * max_radius / spacing))
-                scales = []
+                scales: List[float] = []
                 for k in range(num_levels + 1):
                     s = s_max - k * spacing / max_radius
                     if s <= 0.0: break
                     scales.append(s)
                 if len(scales) < 2: scales = [s_max, s_max * 0.5]
-                segments = []
-                for k, s in enumerate(scales):
-                    level_pts = np.array([centroid + np.array([p.x - centroid[0], p.y - centroid[1]]) * s for p in bpts])
-                    z = h
-                    order_ = list(range(n_edges))
-                    if k % 2 == 1:
-                        order_ = [0] + list(reversed(range(1, n_edges)))
-                    for i in range(len(order_)):
-                        j = order_[i]; j_next = order_[(i + 1) % n_edges]
-                        segments.append(Segment(
-                            Point3D(float(level_pts[j, 0]), float(level_pts[j, 1]), z),
-                            Point3D(float(level_pts[j_next, 0]), float(level_pts[j_next, 1]), z)
-                        ))
-                    if k < len(scales) - 1:
-                        next_pts = np.array([centroid + np.array([p.x - centroid[0], p.y - centroid[1]]) * scales[k + 1] for p in bpts])
-                        segments.append(Segment(
-                            Point3D(float(level_pts[0, 0]), float(level_pts[0, 1]), z),
-                            Point3D(float(next_pts[0, 0]), float(next_pts[0, 1]), z)
-                        ))
+                segments = InstanceGenerator._spiral_segments(bpts, h, scales)
                 new_chains.append(PolygonalChain(segments=segments, height=h, region_id=r.id, idx=c_idx))
             regions.append(Region(id=r.id, boundary=r.boundary, chains=new_chains,
                                   num_interruption_points=r.num_interruption_points))

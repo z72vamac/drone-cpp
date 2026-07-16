@@ -224,6 +224,9 @@ class Solution:
     vertex_positions: Dict[Vertex, Point3D] = field(default_factory=dict)
     chain_selection: Dict[int, int] = field(default_factory=dict)
     vertex_lambdas: Dict[Vertex, float] = field(default_factory=dict)
+    solve_time: Optional[float] = None
+    mip_gap: Optional[float] = None
+    status: Optional[str] = None
 
     def save(self, path: str):
         import json
@@ -243,7 +246,10 @@ class Solution:
             "chain_selection": self.chain_selection,
             "vertex_positions": vp,
             "vertex_lambdas": vl,
-            "operations": ops
+            "operations": ops,
+            "solve_time": self.solve_time,
+            "mip_gap": self.mip_gap,
+            "status": self.status,
         }
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
@@ -270,5 +276,12 @@ class Solution:
                       Vertex(e["r2"], e["i2"], VertexType[e["t2"]])) for e in op_data]
             ops.append(Operation(edges))
         cs = {int(k): int(v) for k, v in data["chain_selection"].items()}
+        status = data.get("status")
+        if isinstance(status, int):
+            status = {2: "OPTIMAL", 3: "INFEASIBLE", 8: "TIME_LIMIT",
+                       9: "SUBOPTIMAL", 11: "INTERRUPTED"}.get(status, str(status))
         return cls(operations=ops, objective_value=data["objective_value"],
-                   vertex_positions=vp, chain_selection=cs, vertex_lambdas=vl)
+                   vertex_positions=vp, chain_selection=cs, vertex_lambdas=vl,
+                   solve_time=data.get("solve_time"),
+                   mip_gap=data.get("mip_gap"),
+                   status=status)
