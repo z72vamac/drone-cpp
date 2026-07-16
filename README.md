@@ -7,8 +7,9 @@ different altitudes, with limited endurance and wind-aware energy consumption.
 
 Companion code for the work *Drone Coverage Path Planning*
 (Amorosi, Dell'Olmo, Puerto, Valverde). See
-[`implemented_model.tex`](implemented_model.tex) for the documentation of the
-implemented model and [`main.tex`](main.tex) for the paper manuscript.
+[`articulo/implemented_model.tex`](articulo/implemented_model.tex) for the
+documentation of the implemented model and
+[`articulo/main.tex`](articulo/main.tex) for the paper manuscript.
 
 ## Installation
 
@@ -50,10 +51,14 @@ drone_cpp/
   instance_generator.py InstanceGenerator.generate / rebuild_instance
   model.py              CPPModel — Gurobi MIQP model (location, path, energy)
   visualization.py      CPPVis — 2D/3D plotting with arrows along chains
-main.tex                Paper manuscript (Elsevier format)
-implemented_model.tex   Model documentation comparing code vs formulation
+articulo/               LaTeX sources, figures and bibliography
+  main.tex              Paper manuscript (Elsevier format)
+  implemented_model.tex Model documentation comparing code vs formulation
+  presentation.tex      Beamer deck with animations across endurance values
+  mybib.bib             Bibliography
+  pictures/             Figures referenced by main.tex
+  tables/               LaTeX \input table fragments
 sweep_results/          Output of sweep_endurance.py (JSON + PNG)
-IFORS/                  IFORS presentation (LaTeX + frames)
 ```
 
 ## Energy model
