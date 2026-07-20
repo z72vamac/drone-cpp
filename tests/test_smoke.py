@@ -24,48 +24,6 @@ from drone_cpp.visualization import CPPVis
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def _make_instance(num_regions: int = 2, seed: int = 7) -> Instance:
-    """Build an instance whose chains survive rebuild_instance's defaults.
-
-    rebuild_instance assigns region r the target altitude 15 + r*25, which
-    must match one of the heights produced by generate(). With num_heights=3
-    the altitudes are 15, 40 and 65 m, so any region_id in {0,1,2} matches.
-    """
-    base = InstanceGenerator.generate(
-        num_regions=num_regions, area_bounds=(0, 0, 100, 100),
-        min_region_size=10.0, max_region_size=20.0, spacing=6.0,
-        num_heights=3, min_height=15.0, max_height=65.0,
-        num_ops=num_regions, seed=seed,
-    )
-    return InstanceGenerator.rebuild_instance(base)
-
-
-def _mock_solution(inst: Instance) -> Solution:
-    """Build a trivial mock solution picking the first chain of each region."""
-    chain_selection = {r.id: 0 for r in inst.regions}
-    vp, vl, ops = {}, {}, []
-    for r in inst.regions:
-        sel = r.chains[0]
-        depot_vertex = inst.depot_vertex
-        v_start = Vertex(r.id, 1, VertexType.START)
-        v_end = Vertex(r.id, 2 * r.num_interruption_points + 2, VertexType.END)
-        vp[v_start] = sel.segments[0].start
-        vp[v_end] = sel.segments[-1].end
-        vl[v_start] = 0.0
-        vl[v_end] = float(len(sel.segments))
-        ops.append(Operation([(depot_vertex, v_start), (v_start, v_end),
-                              (v_end, depot_vertex)]))
-    return Solution(
-        operations=ops, objective_value=1234.5,
-        vertex_positions=vp, chain_selection=chain_selection,
-        vertex_lambdas=vl,
-        solve_time=1.25, mip_gap=0.01, status="OPTIMAL",
-    )
-
-
-# ---------------------------------------------------------------------------
 # Instance generation
 # ---------------------------------------------------------------------------
 def test_generate_instance_shapes():
@@ -109,21 +67,14 @@ def test_rebuild_instance_preserves_metadata():
     assert rebuilt.num_operations == base.num_operations
     assert rebuilt.depot.x == base.depot.x
     assert rebuilt.wind.speed_at_10m == base.wind.speed_at_10m
-    # Each region's default target altitude (15 + r*25) matches one of the
-    # three heights [15, 40, 65], so the rebuild must keep at least one chain.
     for r in rebuilt.regions:
         assert len(r.chains) >= 1, f"Region {r.id} lost all chains after rebuild"
 
 
 def test_spiral_segments_helper():
-    """The extracted helper should produce a non-empty continuous chain."""
-    from drone_cpp.instance_generator import InstanceGenerator
-    from drone_cpp.data_structures import Point3D
-    boundary = [Point3D(0, 0, 0), Point3D(10, 0, 0),
-                Point3D(10, 10, 0), Point3D(0, 10, 0)]
+    boundary = [Point3D(0, 0), Point3D(10, 0), Point3D(10, 10), Point3D(0, 10)]
     segs = InstanceGenerator._spiral_segments(boundary, 25.0, [1.0, 0.5])
     assert len(segs) >= 5
-    # All segments live at z=25.
     for s in segs:
         assert s.start.z == 25.0 and s.end.z == 25.0
 
@@ -132,13 +83,13 @@ def test_spiral_segments_helper():
 # Data structures
 # ---------------------------------------------------------------------------
 def test_wind_speed_at_height():
-    from drone_cpp.data_structures import WindParams
     import numpy as np
+    from drone_cpp.data_structures import WindParams
     w = WindParams(direction=np.array([1.0, 0.0, 0.0]), speed_at_10m=5.0,
                    hellmann_exponent=0.2)
     assert w.speed_at_height(0.0) == 0.0
     assert abs(w.speed_at_height(10.0) - 5.0) < 1e-9
-    assert w.speed_at_height(40.0) > 5.0   # higher -> faster wind
+    assert w.speed_at_height(40.0) > 5.0
 
 
 def test_polygonal_chain_lengths():
@@ -157,8 +108,9 @@ def test_polygonal_chain_lengths():
 # Solution roundtrip
 # ---------------------------------------------------------------------------
 def test_solution_roundtrip(tmp_path):
-    inst = _make_instance(num_regions=2, seed=5)
-    sol = _mock_solution(inst)
+    from conftest import make_instance, mock_solution
+    inst = make_instance(num_regions=2, seed=5)
+    sol = mock_solution(inst)
     p = tmp_path / "sol.json"
     sol.save(str(p))
     loaded = Solution.load(str(p))
@@ -168,7 +120,6 @@ def test_solution_roundtrip(tmp_path):
     assert loaded.solve_time == sol.solve_time
     assert loaded.mip_gap == sol.mip_gap
     assert loaded.status == sol.status
-    # Positions should match exactly.
     for v, pos in sol.vertex_positions.items():
         assert v in loaded.vertex_positions
         assert loaded.vertex_positions[v].x == pytest.approx(pos.x)
@@ -177,12 +128,11 @@ def test_solution_roundtrip(tmp_path):
 
 
 def test_solution_load_legacy_without_metadata(tmp_path):
-    """Solutions saved without metadata (pre-refactor) should still load."""
-    inst = _make_instance(num_regions=2, seed=5)
-    sol = _mock_solution(inst)
+    from conftest import make_instance, mock_solution
+    inst = make_instance(num_regions=2, seed=5)
+    sol = mock_solution(inst)
     p = tmp_path / "sol.json"
     sol.save(str(p))
-    # Strip metadata to emulate an old file.
     with open(p) as f:
         data = json.load(f)
     for k in ("solve_time", "mip_gap", "status"):
@@ -200,31 +150,35 @@ def test_solution_load_legacy_without_metadata(tmp_path):
 # Visualization
 # ---------------------------------------------------------------------------
 def test_plot_instance_returns_figure():
-    inst = _make_instance(num_regions=2, seed=7)
-    fig = CPPVis.plot_instance(inst, show_chains=True)
+    from conftest import make_instance
+    inst = make_instance(num_regions=2, seed=7)
+    fig = CPPVis.plot_instance(inst, chain_selection={0: 0, 1: 0})
     assert fig is not None
     plt.close(fig)
 
 
 def test_plot_solution_2d_returns_figure():
-    inst = _make_instance(num_regions=2, seed=7)
-    sol = _mock_solution(inst)
+    from conftest import make_instance, mock_solution
+    inst = make_instance(num_regions=2, seed=7)
+    sol = mock_solution(inst)
     fig = CPPVis.plot_solution_2d(inst, sol)
     assert fig is not None
     plt.close(fig)
 
 
 def test_plot_solution_3d_returns_figure():
-    inst = _make_instance(num_regions=2, seed=7)
-    sol = _mock_solution(inst)
+    from conftest import make_instance, mock_solution
+    inst = make_instance(num_regions=2, seed=7)
+    sol = mock_solution(inst)
     fig = CPPVis.plot_solution_3d(inst, sol)
     assert fig is not None
     plt.close(fig)
 
 
 def test_plot_solution_combined_returns_figure():
-    inst = _make_instance(num_regions=2, seed=7)
-    sol = _mock_solution(inst)
+    from conftest import make_instance, mock_solution
+    inst = make_instance(num_regions=2, seed=7)
+    sol = mock_solution(inst)
     fig = CPPVis.plot_solution(inst, sol)
     assert fig is not None
     plt.close(fig)

@@ -18,9 +18,13 @@ gurobi.lic
 
 # Plots and outputs (regenerables)
 *.png
-!pictures/*.png
+!articulo/pictures/*.png
 !IFORS/**/*.png
 sweep_results/*.png
+
+# PDF (regenerables)
+*.pdf
+!articulo/*.pdf
 
 # Solution files (regenerables)
 *.sol
@@ -28,6 +32,10 @@ sweep_results/end_*_sol.json
 cone_solution.json
 solution_high.json
 solution_limited.json
+heuristic_solution.json
+
+# Comparison experiment outputs
+compare_results/
 
 # Logs
 *.log
@@ -58,3 +66,8 @@ Thumbs.db
 
 # Temp animation frames
 anim_frames*/
+
+# Scratch solution dumps (no extension)
+v2_3regions_v2
+v*_*
+heuristic_solution.png

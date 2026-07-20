@@ -15,5 +15,5 @@ from .data_structures import (
     AtmosphereParams, Instance, Operation, Solution,
 )
 from .instance_generator import InstanceGenerator
-from .model import CPPModel
+from .model import CPPModel, build_model
 from .visualization import CPPVis

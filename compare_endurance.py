@@ -18,7 +18,7 @@ sys.path.insert(0, ".")
 
 from drone_cpp.instance_generator import InstanceGenerator
 from drone_cpp.data_structures import Instance, DroneParams
-from drone_cpp.model import CPPModel
+from drone_cpp.model import build_model
 from drone_cpp.visualization import CPPVis
 from drone_cpp.config import (
     DEFAULT_SEED, DEFAULT_AREA_BOUNDS, DEFAULT_REGION_SIZES,
@@ -43,6 +43,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-limited", type=str, default="solution_limited.json")
     p.add_argument("--plot-high", type=str, default="solution_high.png")
     p.add_argument("--plot-limited", type=str, default="solution_limited.png")
+    p.add_argument("--model", type=str, default="rings", choices=["v1", "rings"],
+                   help="Model variant: v1 (spiral chain) or rings (ring-based)")
     return p.parse_args()
 
 
@@ -59,7 +61,7 @@ def build_base(seed: int) -> Instance:
 
 def solve_with_endurance(inst: Instance, endurance: float,
                          time_limit: float, mip_gap: float,
-                         label: str):
+                         label: str, model_type: str = "rings"):
     logger.info("[%s] endurance=%.1f J, solving (tl=%.1fs)...", label, endurance, time_limit)
     drone = DroneParams(
         front_area=inst.drone.front_area, drag_coef=inst.drone.drag_coef,
@@ -68,7 +70,7 @@ def solve_with_endurance(inst: Instance, endurance: float,
     )
     inst_run = Instance(regions=inst.regions, depot=inst.depot, drone=drone,
                         wind=inst.wind, num_operations=inst.num_operations)
-    model = CPPModel(inst_run, verbose=False)
+    model = build_model(inst_run, model_type, verbose=False)
     model.model.setParam("MIPGap", mip_gap)
     solution = model.optimize(tl=time_limit)
     if solution is None:
@@ -89,7 +91,8 @@ def main() -> None:
     inst = build_base(args.seed)
 
     result_high = solve_with_endurance(inst, args.endurance_high,
-                                       args.time_limit, args.mip_gap, "HIGH")
+                                       args.time_limit, args.mip_gap, "HIGH",
+                                       model_type=args.model)
     if result_high is None:
         sys.exit(1)
     inst_high, sol_high = result_high
@@ -106,7 +109,8 @@ def main() -> None:
     logger.info("Saved %s", args.plot_high)
 
     result_lim = solve_with_endurance(inst, args.endurance_limited,
-                                      args.time_limit, args.mip_gap, "LIMITED")
+                                       args.time_limit, args.mip_gap, "LIMITED",
+                                       model_type=args.model)
     if result_lim is None:
         sys.exit(1)
     inst_lim, sol_lim = result_lim

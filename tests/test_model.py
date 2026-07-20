@@ -1,40 +1,122 @@
-"""Slow tests that build and solve a small CPPModel via Gurobi.
+"""Tests for CPPModel — both fast (structure-only, Gurobi needed for creation)
+and slow (actual solve).
+
+The fast tests require Gurobi to *build* the model but do NOT solve it.
+They are marked `slow` because Gurobi is a heavyweight dependency, but they
+complete in < 1s once imported.
 
 Run with:  pytest --runslow
-These are skipped by default to keep CI fast and license-free.
 """
 from __future__ import annotations
 import pytest
 
-from drone_cpp.instance_generator import InstanceGenerator
 from drone_cpp.model import CPPModel
+from drone_cpp.data_structures import AtmosphereParams
 
 
-def _small_instance():
-    base = InstanceGenerator.generate(
-        num_regions=2, area_bounds=(0, 0, 100, 100),
-        min_region_size=10.0, max_region_size=20.0, spacing=6.0,
-        num_heights=2, min_height=15.0, max_height=40.0,
-        num_ops=2, seed=13,
-    )
-    return InstanceGenerator.rebuild_instance(base)
-
-
+# ---------------------------------------------------------------------------
+# Structure tests (require Gurobi for model construction, no solve)
+# ---------------------------------------------------------------------------
 @pytest.mark.slow
 def test_model_builds():
-    inst = _small_instance()
+    from conftest import small_instance
+    inst = small_instance()
     model = CPPModel(inst, verbose=False)
     assert model.model.NumVars > 0
     assert model.model.NumConstrs > 0
-    # Number of intra-region edges should be > 0.
     assert len(model._intra_rl) + len(model._intra_lr) > 0
-    # Inter-region edges should exist (two different regions).
     assert len(model._inter_edges) > 0
 
 
 @pytest.mark.slow
+def test_model_variable_counts():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    n_mu = len(model.mu)
+    n_x = len(model.x)
+    n_y = len(model.y)
+    assert n_mu > 0
+    assert n_x > 0
+    assert n_y > 0
+
+
+@pytest.mark.slow
+def test_model_precompute_keys():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    for r in inst.regions:
+        for ti in range(len(r.chains)):
+            key = (r.id, ti)
+            assert key in model._cinfo
+            info = model._cinfo[key]
+            assert "seg_lens" in info
+            assert "cum_before" in info
+            assert "density" in info
+            assert "nu_d_fwd" in info
+            assert info["density"] > 0
+
+
+@pytest.mark.slow
+def test_model_bounds_non_negative():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    assert model._max_h() > 0
+    assert model._max_d() > 0
+    assert model._max_chain_len() > 0
+
+
+@pytest.mark.slow
+def test_model_endurance_and_depot():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    assert model.inst.drone.max_endurance > 0
+    assert model.depot_v.region_id == -1
+    assert model.inst.depot.z == 0.0
+
+
+@pytest.mark.slow
+def test_model_location_variables():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    for v in model.verts:
+        assert v in model.P_x
+        assert v in model.P_y
+        assert v in model.P_z
+
+
+@pytest.mark.slow
+def test_model_alpha_variables():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    for r in inst.regions:
+        for ti in range(len(r.chains)):
+            assert (r.id, ti) in model.alpha
+
+
+@pytest.mark.slow
+def test_model_rho_positive():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    for r in inst.regions:
+        ub = model.rho_sel[r.id].UB
+        assert ub <= AtmosphereParams.air_density(0.)
+        assert ub > 0
+
+
+# ---------------------------------------------------------------------------
+# Solve tests (require Gurobi + license)
+# ---------------------------------------------------------------------------
+@pytest.mark.slow
 def test_small_instance_solves():
-    inst = _small_instance()
+    from conftest import small_instance
+    inst = small_instance()
     model = CPPModel(inst, verbose=False)
     model.model.setParam("MIPFocus", 1)
     solution = model.optimize(tl=30.0)
@@ -44,6 +126,18 @@ def test_small_instance_solves():
     assert solution.objective_value >= 0
     assert len(solution.operations) >= 1
     assert len(solution.chain_selection) == inst.num_regions
-    # Metadata should now be populated by optimize().
     assert solution.status in ("OPTIMAL", "TIME_LIMIT", "SUBOPTIMAL", "INTERRUPTED")
     assert solution.solve_time is not None and solution.solve_time > 0
+
+
+@pytest.mark.slow
+def test_model_optimize_returns_solution_metadata():
+    from conftest import small_instance
+    inst = small_instance()
+    model = CPPModel(inst, verbose=False)
+    solution = model.optimize(tl=30.0)
+    if solution is None:
+        pytest.skip("Gurobi returned no feasible solution")
+    assert solution.objective_value >= 0
+    assert solution.solve_time is not None
+    assert solution.status is not None

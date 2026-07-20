@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List, Tuple, Optional
 import numpy as np
 from .data_structures import (
-    Point3D, Segment, PolygonalChain, Region, Vertex,
+    Point3D, Segment, Ring, PolygonalChain, Region, Vertex,
     VertexType, Edge, EdgeType, DroneParams, WindParams,
     AtmosphereParams, Instance
 )
@@ -139,6 +139,30 @@ class InstanceGenerator:
         return segments
 
     @staticmethod
+    def _build_rings(boundary: List[Point3D], height: float,
+                     scales: List[float]) -> List[Ring]:
+        pts = np.array([[p.x, p.y] for p in boundary])
+        centroid = pts.mean(axis=0)
+        n = len(pts)
+        rings: List[Ring] = []
+        for k, s in enumerate(scales):
+            level = centroid + (pts - centroid) * s
+            z = height
+            order = list(range(n))
+            if k % 2 == 1:
+                order = [0] + list(reversed(range(1, n)))
+            segs = []
+            for i in range(len(order)):
+                j = order[i]
+                j_next = order[(i + 1) % n]
+                segs.append(Segment(
+                    Point3D(float(level[j, 0]), float(level[j, 1]), z),
+                    Point3D(float(level[j_next, 0]), float(level[j_next, 1]), z)
+                ))
+            rings.append(Ring(segments=segs, scale=float(s), height=height))
+        return rings
+
+    @staticmethod
     def _generate_spiral_chain(boundary: List[Point3D], height: float,
                                 region_id: int, chain_idx: int,
                                 rng: np.random.RandomState,
@@ -165,11 +189,14 @@ class InstanceGenerator:
         if len(segments) < 2:
             return None
 
+        rings = InstanceGenerator._build_rings(boundary, height, scales)
+
         return PolygonalChain(
             segments=segments,
             height=height,
             region_id=region_id,
-            idx=chain_idx
+            idx=chain_idx,
+            rings=rings,
         )
 
 
@@ -217,20 +244,21 @@ class InstanceGenerator:
                          h_cone: float = 90.0,
                          region_heights: Optional[dict] = None) -> Instance:
         if region_heights is None:
-            region_heights = {r.id: 15.0 + r.id * 25.0 for r in base_inst.regions}
+            region_heights = {r.id: [15.0 + r.id * 25.0] for r in base_inst.regions}
+        for rid in region_heights:
+            if not isinstance(region_heights[rid], (list, tuple)):
+                region_heights[rid] = [region_heights[rid]]
         regions = []
         for r in base_inst.regions:
             bpts = r.boundary
-            centroid = np.array([[p.x, p.y] for p in bpts]).mean(axis=0)
-            max_radius = max(np.linalg.norm([p.x - centroid[0], p.y - centroid[1]]) for p in bpts)
-            target_h = region_heights[r.id]
+            target_heights = region_heights[r.id]
             new_chains = []
-            for c_idx, chain in enumerate(r.chains):
-                h = chain.height
-                if abs(h - target_h) > 0.1:
-                    continue
+            for c_idx, h in enumerate(target_heights):
                 spacing = base_spacing * (h / ref_height)
                 s_max = max(0.1, 1.0 - h / h_cone)
+                pts_np = np.array([[p.x, p.y] for p in bpts])
+                centroid = pts_np.mean(axis=0)
+                max_radius = max(np.linalg.norm(p - centroid) for p in pts_np)
                 num_levels = max(1, int(s_max * max_radius / spacing))
                 scales: List[float] = []
                 for k in range(num_levels + 1):
@@ -239,7 +267,8 @@ class InstanceGenerator:
                     scales.append(s)
                 if len(scales) < 2: scales = [s_max, s_max * 0.5]
                 segments = InstanceGenerator._spiral_segments(bpts, h, scales)
-                new_chains.append(PolygonalChain(segments=segments, height=h, region_id=r.id, idx=c_idx))
+                rings = InstanceGenerator._build_rings(bpts, h, scales)
+                new_chains.append(PolygonalChain(segments=segments, height=h, region_id=r.id, idx=c_idx, rings=rings))
             regions.append(Region(id=r.id, boundary=r.boundary, chains=new_chains,
                                   num_interruption_points=r.num_interruption_points))
         return Instance(

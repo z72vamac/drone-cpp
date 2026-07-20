@@ -19,7 +19,7 @@ sys.path.insert(0, ".")
 
 from drone_cpp.instance_generator import InstanceGenerator
 from drone_cpp.data_structures import Instance, DroneParams
-from drone_cpp.model import CPPModel
+from drone_cpp.model import build_model
 from drone_cpp.visualization import CPPVis
 from drone_cpp.config import (
     DEFAULT_SEED, DEFAULT_AREA_BOUNDS, DEFAULT_REGION_SIZES,
@@ -48,6 +48,8 @@ def parse_args() -> argparse.Namespace:
                    help=f"Instance seed (default {DEFAULT_SEED})")
     p.add_argument("--out-dir", type=str, default="sweep_results",
                    help="Output directory for JSON+PNGs (default sweep_results)")
+    p.add_argument("--model", type=str, default="rings", choices=["v1", "rings"],
+                   help="Model variant: v1 (spiral chain) or rings (ring-based)")
     return p.parse_args()
 
 
@@ -90,7 +92,7 @@ def main() -> None:
                             drone=limited_drone, wind=inst.wind,
                             num_operations=inst.num_operations)
 
-        model = CPPModel(inst_run, verbose=True)
+        model = build_model(inst_run, args.model, verbose=True)
         model.model.setParam("MIPGap", args.mip_gap)
         t0 = time.time()
         solution = model.optimize(tl=args.time_limit)

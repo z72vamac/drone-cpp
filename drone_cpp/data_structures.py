@@ -16,6 +16,7 @@ class EdgeType(Enum):
     INTRA_LR = 1
     INTRA_RL = 2
     INTER = 3
+    RING_TRANSITION = 4
 
 
 @dataclass
@@ -59,11 +60,31 @@ class Segment:
 
 
 @dataclass
-class PolygonalChain:
+class Ring:
     segments: List[Segment]
+    scale: float
     height: float
-    region_id: int
-    idx: int
+
+    @property
+    def perimeter(self) -> float:
+        return sum(s.length for s in self.segments)
+
+    @property
+    def num_vertices(self) -> int:
+        return len(self.segments)
+
+
+@dataclass
+class PolygonalChain:
+    segments: List[Segment] = field(default_factory=list)
+    height: float = 0.0
+    region_id: int = 0
+    idx: int = 0
+    rings: List[Ring] = None
+
+    def __post_init__(self):
+        if self.rings is None:
+            self.rings = []
 
     @property
     def total_length(self) -> float:
@@ -92,6 +113,12 @@ class PolygonalChain:
         wind_vec = wind_speed * wind_dir
         nu_d_vec = cruise_speed * seg_dir - wind_vec
         return float(np.linalg.norm(nu_d_vec))
+
+    def ring_segment_offset(self, ring_idx: int) -> int:
+        offset = 0
+        for i in range(ring_idx):
+            offset += len(self.rings[i].segments)
+        return offset
 
 
 @dataclass
@@ -224,9 +251,12 @@ class Solution:
     vertex_positions: Dict[Vertex, Point3D] = field(default_factory=dict)
     chain_selection: Dict[int, int] = field(default_factory=dict)
     vertex_lambdas: Dict[Vertex, float] = field(default_factory=dict)
+    vertex_rings: Dict[Vertex, int] = field(default_factory=dict)
     solve_time: Optional[float] = None
     mip_gap: Optional[float] = None
     status: Optional[str] = None
+    first_incumbent_obj: Optional[float] = None
+    first_incumbent_time: Optional[float] = None
 
     def save(self, path: str):
         import json
@@ -236,6 +266,9 @@ class Solution:
         vl = {}
         for k, lam in self.vertex_lambdas.items():
             vl[f"{k.region_id},{k.idx},{k.vtype.name}"] = lam
+        vr = {}
+        for k, r_idx in self.vertex_rings.items():
+            vr[f"{k.region_id},{k.idx},{k.vtype.name}"] = r_idx
         ops = []
         for op in self.operations:
             ops.append([{"r": u.region_id, "i": u.idx, "t": u.vtype.name,
@@ -246,10 +279,13 @@ class Solution:
             "chain_selection": self.chain_selection,
             "vertex_positions": vp,
             "vertex_lambdas": vl,
+            "vertex_rings": vr,
             "operations": ops,
             "solve_time": self.solve_time,
             "mip_gap": self.mip_gap,
             "status": self.status,
+            "first_incumbent_obj": self.first_incumbent_obj,
+            "first_incumbent_time": self.first_incumbent_time,
         }
         with open(path, "w") as f:
             json.dump(data, f, indent=2)
@@ -276,12 +312,21 @@ class Solution:
                       Vertex(e["r2"], e["i2"], VertexType[e["t2"]])) for e in op_data]
             ops.append(Operation(edges))
         cs = {int(k): int(v) for k, v in data["chain_selection"].items()}
+        vr = {}
+        if "vertex_rings" in data:
+            for k, r_idx in data["vertex_rings"].items():
+                parts = k.split(",")
+                vk = Vertex(int(parts[0]), int(parts[1]), VertexType[parts[2]])
+                vr[vk] = int(r_idx)
         status = data.get("status")
         if isinstance(status, int):
             status = {2: "OPTIMAL", 3: "INFEASIBLE", 8: "TIME_LIMIT",
                        9: "SUBOPTIMAL", 11: "INTERRUPTED"}.get(status, str(status))
         return cls(operations=ops, objective_value=data["objective_value"],
                    vertex_positions=vp, chain_selection=cs, vertex_lambdas=vl,
+                   vertex_rings=vr,
                    solve_time=data.get("solve_time"),
                    mip_gap=data.get("mip_gap"),
-                   status=status)
+                   status=status,
+                   first_incumbent_obj=data.get("first_incumbent_obj"),
+                   first_incumbent_time=data.get("first_incumbent_time"))
