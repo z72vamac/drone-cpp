@@ -413,8 +413,8 @@ def parse_args():
                    help="Skip runs already recorded in completed_runs.txt")
     p.add_argument("--time-limit", type=float, default=1800.0,
                    help="Gurobi time limit per run in seconds (default 1800)")
-    p.add_argument("--mip-gap", type=float, default=0.1,
-                   help="Gurobi MIPGap fraction (default 0.1)")
+    p.add_argument("--mip-gap", type=float, default=0.0,
+                   help="Gurobi MIPGap fraction (default 0.0 = stop only at proven optimality)")
     return p.parse_args()
 
 
