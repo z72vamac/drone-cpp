@@ -560,6 +560,175 @@ The following constraints set the values of these variables:
     k^o &\ge 1 - \zeta^o, && \forall o \in \mathcal{O}, \quad \text{(VI-2)}
 \end{align*}
 
+\section{Heuristic Solution Method}\label{sec:heuristic}
+
+The mixed-integer formulation presented in Section~\ref{sec:formulation} is computationally expensive for instances with many regions or rings. To obtain high-quality feasible solutions quickly---and to provide warm starts for the exact solver---we develop a multi-phase constructive and improvement heuristic. The algorithm proceeds in seven stages, summarized in Algorithm~\ref{alg:heuristic}.
+
+\begin{algorithm}[t]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\Input{Instance (regions $\mathcal{R}$, depot $v_0$, drone parameters, wind)}
+\Output{Feasible solution $S$ (set of tours respecting endurance)}
+\BlankLine
+\ForEach{region $r\in\mathcal{R}$}{
+    Select best chain $t_r^*$ \; \Comment*[f]{\S\ref{sec:chain-sel}}
+}
+Build flat list $\mathcal{K}$ of rings from selected chains \; \Comment*[f]{\S\ref{sec:ring-info}}
+Build giant tour $\pi$ via nearest-neighbor TSP on $\mathcal{K}$ \; \Comment*[f]{\S\ref{sec:tsp}}
+Improve $\pi$ with 2-opt \; \Comment*[f]{\S\ref{sec:tsp}}
+Split $\pi$ into feasible operations $\mathcal{P}$ respecting $W^{\max}$ \; \Comment*[f]{\S\ref{sec:split}}
+\For{$\mathit{it}\gets 1$ \KwTo $N_{\text{coord}}$}{
+    \ForEach{operation $o\in\mathcal{P}$}{
+        \ForEach{ring $\kappa$ in $o$}{
+            Optimize entry point of $\kappa$ w.r.t.\ neighbors \; \Comment*[f]{\S\ref{sec:coord}}
+        }
+    }
+}
+Local search \quad \Comment*[f]{\S\ref{sec:ls}}
+\Indp
+2-opt per operation \;
+Or-opt between operations (move rings across ops) \;
+\Indm
+Build and return $S$ \; \Comment*[f]{\S\ref{sec:build}}
+\caption{Multi-phase heuristic for the drone CPP}
+\label{alg:heuristic}
+\end{algorithm}
+
+\subsection{Chain Selection}\label{sec:chain-sel}
+
+For each region $r\in\mathcal{R}$, the user provides a set of polygonal chains $\mathcal{T}_r$, each at a different altitude $h_t$. Only chains with the maximum number of rings for that region are considered (the rings grow radially from the region centroid, so more rings imply a finer coverage pattern). Among those, we select the chain that minimizes a proxy cost:
+
+\[
+c(t)=\sum_{\kappa\in\mathcal{K}_t}\operatorname{perim}(\kappa)+\frac12\bigl(d_{\text{xy}}(\operatorname{centroid}(r),v_0)+h_t\bigr),
+\]
+
+where $\operatorname{perim}(\kappa)$ is the perimeter of ring $\kappa$, $\operatorname{centroid}(r)$ is the centroid of region $r$, $d_{\text{xy}}(\cdot,\cdot)$ is the Euclidean distance in the plane, and $h_t$ is the altitude of chain $t$. The perimeter term favours tighter coverage patterns, while the depot-distance and height terms penalize long travel. The scaling factor $1/2$ balances intra-ring versus inter-ring travel cost. This step is illustrated in Algorithm~\ref{alg:chain-sel}.
+
+\begin{algorithm}[t]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\Input{Regions $\mathcal{R}$, depot $v_0$, chains $\{\mathcal{T}_r\}_{r\in\mathcal{R}}$}
+\Output{Chain selection $s:\mathcal{R}\to\mathbb{N}$}
+\BlankLine
+\ForEach{region $r\in\mathcal{R}$}{
+    $t^*\gets0$, $b\gets\infty$ \;
+    \ForEach{chain $t\in\mathcal{T}_r$}{
+        \If{$|\mathcal{K}_t|<\max_{t'\in\mathcal{T}_r}|\mathcal{K}_{t'}|$}{\textbf{continue}}
+        $c\gets\sum_{\kappa\in\mathcal{K}_t}\operatorname{perim}(\kappa)+\frac12\bigl(d_{\text{xy}}(\operatorname{centroid}(r),v_0)+h_t\bigr)$ \;
+        \If{$c<b$}{$t^*\gets t$, $b\gets c$}
+    }
+    $s[r]\gets t^*$
+}
+\caption{Chain selection}
+\label{alg:chain-sel}
+\end{algorithm}
+
+\subsection{Ring Information}\label{sec:ring-info}
+
+Once a chain is fixed for each region, we extract all rings from the selected chains into a flat list $\mathcal{K}=\{\kappa_1,\dots,\kappa_M\}$. Each ring $\kappa_m$ is a closed polygonal chain of segments at altitude $h_t$. For every ring we store:
+\begin{itemize}
+    \item its centroid $\bar p_m=(\bar x_m,\bar y_m,h_t)$;
+    \item its perimeter $\operatorname{perim}_m$;
+    \item its segments $s_{m,1},\dots,s_{m,K_m}$ and cumulative arc-lengths $\Lambda_m(0),\dots,\Lambda_m(K_m)$;
+    \item an entry point $\xi_m$ (initially set to the centroid) and an entry parameter $\lambda_m\in[0,\operatorname{perim}_m]$ giving the position along the ring perimeter.
+\end{itemize}
+
+A point on a ring at arc-length $\lambda$ is obtained by locating the segment $k$ such that $\Lambda_m(k-1)\le\lambda<\Lambda_m(k)$ and interpolating linearly:
+
+\[
+P(\lambda)=Q_{m,k}^{\text{start}}+\frac{\lambda-\Lambda_m(k-1)}{\ell_{m,k}}\bigl(Q_{m,k}^{\text{end}}-Q_{m,k}^{\text{start}}\bigr),
+\]
+
+where $\ell_{m,k}$ is the length of segment $k$ of ring $m$.
+
+\subsection{Giant Tour: Nearest-Neighbour TSP and 2-Opt}\label{sec:tsp}
+
+The rings must be visited in some sequence. We model this as a travelling salesman problem on the set of ring centroids (plus the depot as a dummy start/end node). Starting from the depot, we repeatedly visit the nearest unvisited centroid (Euclidean distance in 3D). This yields an initial permutation $\pi$ of $\{1,\dots,M\}$.
+
+The permutation is then improved with the 2-opt heuristic, which repeatedly inverts subsequences. Given indices $i<j$, let $a,b,c,d$ be the centroids of $\pi_{i-1},\pi_i,\pi_j,\pi_{j+1}$ (or the depot for boundary cases). If
+
+\[
+\|a-b\|_2+\|c-d\|_2 > \|a-c\|_2+\|b-d\|_2,
+\]
+
+then $\pi_i,\dots,\pi_j$ are reversed. The process is repeated until no improvement is found or a maximum of 20 passes is reached.
+
+\subsection{Split into Feasible Operations}\label{sec:split}
+
+The giant tour may exceed the drone's endurance $W^{\max}$. We partition it greedily into feasible operations (Algorithm~\ref{alg:split}).
+
+\begin{algorithm}[t]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}
+\SetKwInOut{Output}{Output}
+\Input{Giant tour $\pi$, ring info $\mathcal{K}$, endurance $W^{\max}$}
+\Output{Set of operations $\mathcal{P}$ (each a list of ring indices)}
+\BlankLine
+$\mathcal{P}\gets\emptyset$, $C\gets\emptyset$, $e_{\text{cur}}\gets0$ \;
+\ForEach{ring index $\kappa$ in $\pi$}{
+    $\text{ring}\gets\mathcal{K}[\kappa]$ \;
+    $\xi_e(\kappa)\gets$ energy depot$\to$ring if $C=\emptyset$, else energy prev$\to$ring \;
+    $r_e\gets\operatorname{perim}(\text{ring})$ \;
+    $b_e\gets$ energy ring$\to$depot \;
+    \If{$e_{\text{cur}}+\xi_e(\kappa)+r_e+b_e\le W^{\max}+\varepsilon$}{
+        append $\kappa$ to $C$ \;
+        $e_{\text{cur}}\mathrel{+}= \xi_e(\kappa)+r_e$ \;
+    }
+    \Else{
+        \If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
+        $C\gets\{\kappa\}$ \;
+        $e_{\text{cur}}\gets$ energy depot$\to$ring $+ r_e$ \;
+    }
+}
+\If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
+\caption{Greedy split of the giant tour into endurance-feasible operations}
+\label{alg:split}
+\end{algorithm}
+
+The energy to travel from the depot to a ring in region $r$ is computed as
+
+\[
+E_{\text{xy}}(r)\cdot d_{\text{xy}}(v_0,\xi)+E_{\text{z}}\cdot\xi_z\cdot\rho(\xi_z)/2,
+\]
+
+where $E_{\text{xy}}=\frac12 c A$ and $E_{\text{z}}=\frac12 c A v_{\text{vert}}$ capture drone aerodynamics, $\rho(\cdot)$ is the air density at a given altitude, and $d_{\text{xy}}$ is the horizontal Euclidean distance. The energy to travel between rings is approximated as the Manhattan-like sum $d_{\text{xy}}(a,b)+d_z(a,b)$.
+
+\subsection{Entry-Point Optimization}\label{sec:coord}
+
+For each ring in each operation, the entry point (where the drone arrives and departs) is initially the centroid. We refine it with coordinate descent: for a ring $\kappa$ with predecessor $p$ and successor $q$ in the same operation, we sample $N_{\text{samples}}=60$ candidate positions evenly spaced along the ring perimeter, and select the one minimizing
+
+\[
+\|P(\lambda)-p\|_2 + \|P(\lambda)-q\|_2 .
+\]
+
+This is repeated for $N_{\text{coord}}=8$ full passes through all operations. The entry point determines both the inter-ring travel cost and the ring traverse cost (the drone still flies the full perimeter between entry and exit at the same point, i.e.\ the ring perimeter is added as a constant).
+
+\subsection{Local Search}\label{sec:ls}
+
+Two local-search procedures are applied in sequence:
+
+\paragraph{2-opt per operation.}
+Within each operation, the order of rings is improved with 2-opt as described in \S\ref{sec:tsp}, but now using the full energy cost (including depot-to-first and last-to-depot) rather than Euclidean distance.
+
+\paragraph{Or-opt between operations.}
+Individual rings are moved from one operation to another if doing so reduces the total cost and the resulting operations remain within the endurance limit. For every source operation $o_s$, every ring $\kappa$ in $o_s$, and every insertion position in a different operation $o_d$, the move is accepted if:
+
+\[
+E(o_s\setminus\{\kappa\})\le W^{\max},\quad
+E(o_d\cup\{\kappa\})\le W^{\max},\quad
+E(o_s\setminus\{\kappa\})+E(o_d\cup\{\kappa\}) < E(o_s)+E(o_d).
+\]
+
+After each successful move, entry points are re-optimized (three coordinate-descent passes) to reflect the new neighbourhood structure.
+
+\subsection{Solution Construction}\label{sec:build}
+
+The final tours are encoded as a \texttt{Solution} object. For each operation, edges are created: depot $\to$ entry of first ring, entry $\to$ exit for each ring (with the same position for both, costing the ring perimeter), and exit of last ring $\to$ depot. The objective value is the sum of all edge costs, matching the energy-based objective of the exact formulation.
+
+The heuristic runs in $O(M^2+N_{\text{coord}}\,M\,N_{\text{samples}}+L_{\text{max}}\,M^2)$ time, where $M$ is the total number of rings and $L_{\text{max}}$ bounds the local-search iterations. For typical instances ($M\le 75$), this completes in under $0.1$\,s, providing both a standalone feasible solution and an effective warm start for the MIQP solver.
+
 \section{Computational Experiments}
 
 

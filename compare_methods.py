@@ -61,7 +61,8 @@ CSV_FIELDS = [
     "num_regions", "num_heights", "seed", "endurance", "method",
     "objective", "solve_time", "mip_gap",
     "first_incumbent_obj", "first_incumbent_time",
-    "heuristic_obj", "num_ops", "status", "n_vars", "n_constrs",
+    "heuristic_obj", "heuristic_time",
+    "num_ops", "status", "n_vars", "n_constrs",
 ]
 
 
@@ -299,11 +300,13 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                             emit(_row(nr, nh, seed, E, "heuristic",
                                       objective="%.4f" % sol_h.objective_value,
                                       solve_time="%.2f" % heur_time,
+                                      heuristic_time="%.2f" % heur_time,
                                       num_ops=len(sol_h.operations),
                                       status="HEURISTIC"))
                         else:
                             emit(_row(nr, nh, seed, E, "heuristic",
                                       solve_time="%.2f" % heur_time,
+                                      heuristic_time="%.2f" % heur_time,
                                       status="FAILED"))
                         mark_done(key_h)
 
@@ -335,12 +338,14 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                     first_incumbent_time=(
                                         "%.2f" % sol_r.first_incumbent_time
                                         if sol_r.first_incumbent_time is not None else ""),
+                                    heuristic_time="%.2f" % heur_time,
                                     num_ops=len(sol_r.operations),
                                     status=sol_r.status or "?",
                                     n_vars=nv, n_constrs=nc))
                             else:
                                 emit(_row(nr, nh, seed, E, "rings",
                                           solve_time="%.2f" % elapsed,
+                                          heuristic_time="%.2f" % heur_time,
                                           status="INFEASIBLE",
                                           n_vars=nv, n_constrs=nc))
                         except Exception as ex:
@@ -383,6 +388,7 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                             "%.2f" % sol_w.first_incumbent_time
                                             if sol_w.first_incumbent_time is not None else ""),
                                         heuristic_obj="%.4f" % sol_h.objective_value,
+                                        heuristic_time="%.2f" % heur_time,
                                         num_ops=len(sol_w.operations),
                                         status=sol_w.status or "?",
                                         n_vars=nv, n_constrs=nc))
@@ -391,13 +397,15 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                               solve_time="%.2f" % elapsed,
                                               status="INFEASIBLE",
                                               heuristic_obj="%.4f" % sol_h.objective_value,
+                                              heuristic_time="%.2f" % heur_time,
                                               n_vars=nv, n_constrs=nc))
                             except Exception as ex:
                                 logger.error("  rings_ws FAILED %s: %s",
                                              (nr, nh, seed, E), ex)
                                 emit(_row(nr, nh, seed, E, "rings_ws",
                                           status="ERROR",
-                                          heuristic_obj="%.4f" % sol_h.objective_value))
+                                          heuristic_obj="%.4f" % sol_h.objective_value,
+                                          heuristic_time="%.2f" % heur_time))
                         mark_done(key_w)
 
     csv_f.close()
