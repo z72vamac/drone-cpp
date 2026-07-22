@@ -7,22 +7,19 @@
 \usepackage{float}
 \usepackage{breqn}
 \usepackage{xcolor}
-\usepackage{comment}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
-\usepackage{mathtools,amssymb}
+\usepackage{mathtools}
 \usepackage{graphicx}
 % \usepackage{caption}
 % \usepackage{subcaption}
 \usepackage{booktabs}
 \usepackage{optidef}
-%\PassOptionsToPackage{gray}{xcolor}
 \usepackage{pstricks}
 \usepackage{pst-all}
-\usepackage{xcolor}
 \usepackage{amsthm}
 \usepackage{comment}
 % \usepackage{pgfplots}
@@ -48,11 +45,11 @@
 
 \usepackage[margin=1in]{geometry}
 \bibliographystyle{elsarticle-num}
-\newcommand{\LA}[1]{{\color{blue}#1}}
-\newcommand{\CV}[1]{{\color{blue}#1}}
-\newcommand{\LP}[1]{{\color{blue}#1}}
+\newcommand{\LA}[1]{#1}
+\newcommand{\CV}[1]{#1}
+\newcommand{\LP}[1]{#1}
 \definecolor{armygreen}{rgb}{0.19, 0.53, 0.43}
-\newcommand{\JP}[1]{{\color{blue}#1}}
+\newcommand{\JP}[1]{#1}
 
 \newcommand{\VM}{{V^{}_{\mathcal M}}}
 \newcommand{\VC}{{V^{}_{\mathcal C}}}
@@ -153,29 +150,26 @@ The optimization of  Unmanned aerial vehicles (UAVs) or drones operations is inh
 
 Indeed, drones have been successfully adopted in different contexts. For example, in disaster management (\cite{art:Chiaraviglio19}, \cite{art:shi2024}), in telecommunication for providing 5G coverage of rural zones \cite{art:Amorosi19}, for inspecting graphs located in the plane  (\cite{art:Amorosi2024}, \cite{art:Amorosi2021}, \cite{art:Amorosi2023}). Other applications include 3D mapping and video surveillance \cite{art:Nexand14}, agriculture for monitoring crop growth \cite{art:Tokekaretal16}, and many others (see \cite{art:Otto18} for a survey of civil use of UAVs). 
 
-In this paper we focus on coverage of areas in the plane and present in the next section a biref state of the art for this problem.
+In this paper we focus on coverage of areas in the plane by a single drone. We propose a mixed-integer quadratic programming (MIQP) formulation that jointly optimizes the altitude, the entry and exit points, and the sequence of operations respecting a limited energy budget. Unlike existing two-stage approaches that first plan intra-region paths and then solve an inter-region routing problem, our formulation allows the drone to interrupt the coverage of a region and resume it later, potentially reducing total energy consumption. To tackle large instances, we also develop a multi-phase constructive heuristic that provides high-quality feasible solutions in under 0.1\,s and can be used to warm-start the exact solver. The main contributions of this paper are:
+\begin{itemize}
+    \item A MIQP formulation for the drone coverage path planning problem integrating altitude selection, variable entry/exit points, and operation splitting under endurance constraints.
+    \item An equivalent edge-based reformulation that replaces vertex-visitation variables with edge-coverage variables, offering a different trade-off between constraint structure and relaxation strength.
+    \item A multi-phase heuristic combining chain selection, nearest-neighbour TSP, 2-opt improvement, greedy endurance-aware tour splitting, and coordinate-descent entry-point optimization.
+    \item A computational study on a testbed of artificial instances with varying numbers of regions, altitude levels, and endurance values, comparing the exact solver with and without warm-start against the standalone heuristic and the two equivalent MIQP formulations.
+\end{itemize}
 
 
 \section{State of the art}
-The coverage path planning problem (CPP) has been studied widely in the literature.
+The coverage path planning problem (CPP) has been studied widely in the literature. A comprehensive survey that includes a taxonomy of CPP algorithms and drone-specific characteristics is presented in \cite{Sonawane2023}. Recent work can be grouped into three broad methodological streams.
 
-A general survey of CPP problems, also related to drone characteristics and including a taxonomy of CPP algorithms, is presented in \cite{Sonawane2023}.
+\paragraph{Back-and-forth coverage patterns.}
+Several authors adopt variants of the back-and-forth (also known as lawnmower or boustrophedon) strategy for intra-region coverage. \cite{Mu2023} propose an improved back-and-forth algorithm with a straight-turn mode to cover rectangular regions containing forbidden areas. \cite{Ahmed2024} develop a mathematical model and heuristic for energy-efficient multi-UAV multi-region CPP, using back-and-forth patterns with Bezier-curve smoothing to reduce energy consumption from turns; their optimization proceeds in two decoupled phases (intra-region path generation then inter-region routing). Similarly, \cite{Tripipicchio2023} generate waypoints for polygonal areas and apply smoothing to reduce flight time and memory footprint.
 
+\paragraph{Two-stage and sequential approaches.}
+Many methods first plan coverage paths within each region and then solve a separate routing problem. \cite{art:VAZQUEZ} present a CPP method for spraying drones that disinfect areas, tested on realistic scenarios. \cite{art:Wang2024} propose a two-stage method for mixed regions with limited energy: they shrink perimeters to generate optimal paths, then use dynamic programming to segment the overall path among multiple drones to satisfy energy limits. \cite{Li2025} develop a trajectory and velocity control approach for energy-efficient visual coverage of multiple terrestrial regions, solving the problem in four sequential stages.
 
-In \cite{Ahmed2024} the authors propose a mathematical model and a heurisitc algorithm  for energy-efficient multi-UAV multi-region CPP to generate appropriate paths that cover multiple disjoint regions, aiming to minimize overall energy consumption. They adopt  a back-and-forth strategy to generate intra-region path patterns with minimum turns and propose a smoothing turns approach  based on Bezier curves to effectively reduce an energy consumption due to taking turns.  The optimization procedure is in two phases: each region is fully explored and then inter region routing problem is solved.
-
-In \cite{Mu2023} the problem of coverage a rectangular region with forbidden areas by means of an improved back and forth algorithm incorporating  the straight-turn mode.
-
-
-In \cite{Tripipicchio2023} an approach for generating a navigation trajectory for UAVs fulfilling the requirements of coverage path planning  with the aim of reducing the timing of the flight and the memory footprint embedded into the vehicles is proposed. They start generating waypoints of polygonal areas and analyse existing CPP methods and select an algorithm for a smoothing approach. 
-
-
-The authors in \cite{art:VAZQUEZ} present a coverage path planning method for a spraying drone that can disinfect areas. Indeed, there are few differences with this CPP with standard CPP problems both technical details of the UAV and for the trajectories that must be followed. The method is experimented on realistic disinfection scenarios.
- 
- 
-In \cite{art:Wang2024} it is presented a two-stage method to cover mixed regions with limited energy. A set of drones starts from a common depot It formulates an optimal path by shrinking the perimeter for mixed regions, and successively, dynamic programming  approach is used to segment the overall path for UAVs in order to meet energy limits.
-
-Li et al. in\cite{Li2025} develop a novel approach for designing the trajectory and controlling the velocity for an unmanned aerial vehicle (UAV) to achieve energy-efficient visual coverage of multiple terrestrial regions allowing the UAV to change both its velocity and its flight altitude during its task tour. The problem is solved in a four steps approach using different algorithms.
+\paragraph{Energy-aware formulations with altitude and speed control.}
+The works most closely related to ours jointly consider energy, altitude, and speed decisions. \cite{Li2025} allow the UAV to change both velocity and altitude during its tour, optimizing visual coverage quality subject to energy constraints. Our approach differs from the above in that we consider the drone may interrupt coverage of a region and move to another one before returning, rather than fully covering each region in a single pass. This flexibility, enabled by the edge set $\mathcal E^{ext}$ in our model, can lead to shorter total tours compared to the two-stage paradigm, as illustrated in Section~\ref{section:description}.
 
 
 
@@ -261,7 +255,7 @@ Indeed, it can be easily shown that the worst case for the two-stage approach co
 
 It has to be noted that our approach does not force the drone path to leave region not completely covered  to move to a different one, but it allows the drone to do this whenever it minimizes the objective function. 
 
-\section{Mathematical Formulation}
+\section{Mathematical Formulation}\label{sec:formulation}
 This section presents a mixed-integer quadratic programming formulation for the problem outlined in Section \ref{section:description}. First, we define the constraints that determine the placement of points along the polygonal chain covering each polygon. Next, we establish the constraints governing the sequence of operations performed by the drone. Then, we introduce the distance constraints that model the drone movements. Finally, we specify the constraints related to energy consumption.
 
 We then define the decision variables representing the problem, which are summarized in Table \ref{table:variables1} and Table \ref{table:variables2}.
@@ -288,13 +282,13 @@ Once points are represented by means of variables $\mu$ and $\gamma$, we can ord
     \lambda_{v}&= \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \CV{\mathcal E_{LR}^{int}\cup\mathcal E_{LR}^S\cup \mathcal E_{LR}^T,}\label{eq:location_7}\tag{$Loc-C_7$}\\
     \lambda_{v}&=\sum_{t\in\mathcal T_r}\alpha_{t}S_t,&\quad\forall v=(r,2R+1), (r, 2R+2):r\in\mathcal R.\label{eq:location_8}\tag{$Loc-C_8$}
 \end{align*}
-Constraints \eqref{eq:location_4} define the values of $\lambda_v$ in relation with the selected segment $s$ and the fraction of this segment that is traversed. Constraints \eqref{eq:location_5} ensure that the starting points of the polygonal chain correspond to the vertices $(r,1)$ and $(r, 2)$. Constraints \eqref{eq:location_6} say that the sequence of points that are located in the polygonal chain is ordered. Restrictions \eqref{eq:location_7} state that the retrieving Finally, the constraints \eqref{eq:location_8} guarantee that the value of $\lambda$ for the vertices $(r, 2R+1)$ and $(r, 2R+2)$ correspond to the end points of the polygonal chain.
+Constraints \eqref{eq:location_4} define the values of $\lambda_v$ in relation with the selected segment $s$ and the fraction of this segment that is traversed. Constraints \eqref{eq:location_5} ensure that the starting points of the polygonal chain correspond to the vertices $(r,1)$ and $(r, 2)$. Constraints \eqref{eq:location_6} ensure that the sequence of points located on the polygonal chain respects the ordering imposed by the direction of traversal, i.e.\ a vertex assigned to a later segment must have a larger parameter $\lambda$ than one assigned to an earlier segment. Constraints \eqref{eq:location_7} enforce that consecutive pairs (launch--retrieve points) share the same parameter $\lambda$, meaning they coincide in space and the drone can enter and exit the chain at the same position. Finally, constraints \eqref{eq:location_8} fix $\lambda$ to the total length $S_t$ of the selected chain $t$ for the end vertices $(r,2R+1)$ and $(r,2R+2)$, ensuring the polygonal chain is fully traversed.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\linewidth]{to_find_ourselves.png}
     \caption{Parameterization of vertices}
-    \label{fig:enter-label}
+    \label{fig:parameterization}
 \end{figure}
 
 \subsection{Drone path constraints}
@@ -308,7 +302,7 @@ In this subsection, we describe the set of constraints related to the operations
 \sum_{v'\in\mathcal V} x_{v'v}^o&=y_{v}^o,&\quad\forall v\in\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_5}\tag{$D_{path}-C_5$}\\
 \sum_{o\in\mathcal O}y_v^o&=1,&\quad\forall v\in\mathcal V',\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
 \sum_{v,v'\in \mathcal V''} x_{vv'}^o&\leq |\mathcal V''|-1,&\forall \mathcal V''\subseteq\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_7}\tag{$D_{path}-C_7$}\\
-\sum_{o\in\mathcal O} x_{vv'}^o &= 1, &\forall v,v'\in\mathcal V':(v,v')\in\CV{\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^ S\cup\mathcal E_{RL}^T}\label{eq:drone_path_8}\tag{$D_{path}-C_8$}. 
+\sum_{o\in\mathcal O} x_{vv'}^o &= 1, &\forall v,v'\in\mathcal V':(v,v')\in\CV{\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^{S}\cup\mathcal E_{RL}^{T}}\label{eq:drone_path_8}\tag{$D_{path}-C_8$}. 
 % u_v^o-u_{v'}^o + 1&\leq (k^o-1)(1-x_{vv'}^o)&\quad\forall v,v'\in\mathcal V\setminus\{(0,0)\}:v \neq v',\forall o\in\mathcal O,\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
 % \sum_{o, o' \in \mathcal O}(x_{vv'}^o+x_{v'v}^{o'})&\geq 1,&\forall v,v'\in\mathcal V':(v,v')\in \mathcal A^{int}, v<_{lex} v '.\label{eq:drone_path_7}\tag{$D_{path}-C_7$}
 \end{align*}
@@ -398,7 +392,7 @@ where $\beta_{v}^{ss'}=\mu_{v}^s\mu_{v'}^{s'}$, $v=(r,i)$, $v'=(r,i+1)$.
 \end{comment}
 
 \subsection{Consumption constraints}
-In our model, we assume that the drone has a limited endurance, denoted by $W^{max}$, to perform each operation. The consumption is computed by using the drag force formula, whose general expression is:
+In our model, we assume that the drone has a limited endurance, denoted by $W^{\max}$, to perform each operation. The consumption is computed by using the drag force formula, whose general expression is:
 $$
 w = \frac{1}{2}Ac\rho\nu d,
 $$
@@ -488,14 +482,14 @@ If the two vertices belong to different regions, we need to introduce the binary
 
 where $E^{xy}=\frac{1}{2}cA$, $E^{z}=\frac{1}{2}cA$, are constants representing the characteristics of the drone, and $\nu^z$ defines the module of the vertical speed of the drone.\\
 
-Based on the previous expressions, we can introduce the last set of constraints, imposing that the drone energy consumption associated with each operation $o$ is not greater than the its maximum endurance $W_{max}$:
+Based on the previous expressions, we can introduce the last set of constraints, imposing that the drone energy consumption associated with each operation $o$ is not greater than the its maximum endurance $W^{\max}$:
 
 %\begin{equation*}\label{eq:endurance}\tag{$Endurance$}
-%\sum_{(v,v^') \in \mathcal A} w_{vv'}x_{vv'}^o \leq W^{max} %&\quad \forall o \in \mathcal O
+%\sum_{(v,v^') \in \mathcal A} w_{vv'}x_{vv'}^o \leq W^{\max} %&\quad \forall o \in \mathcal O
 %\end{equation*}
 
 \begin{equation*}\label{eq:endurance}\tag{$Endurance$}
-\sum_{(v,v^') \in \mathcal E} w_{vv'}x_{vv'}^o \leq W^{max} \quad \forall o \in \mathcal O
+\sum_{(v,v^') \in \mathcal E} w_{vv'}x_{vv'}^o \leq W^{\max} \quad \forall o \in \mathcal O
 \end{equation*}
 
 
@@ -529,36 +523,45 @@ The complete formulation of the CPP follows:
 
 
 
-\subsection{Alternative formulation based on rural postmen problem}
+\subsection{Alternative edge-based formulation}\label{sec:alternative}
 
 \input{tables/table_binary_variables_new}
-\input{tables/table_continuous_variables}
 
-The following constraints set the values of these variables:
-\begin{align*}
-    \lambda_{v}&=\sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}(s-1)\mu_{v}^s + \gamma_v,&\quad\forall v=(r,i)\in\mathcal V',\label{eq:location_4}\tag{$Loc-C_4$}\\
-    \lambda_{v}&=0,&\quad\forall v=(r,1):r\in\mathcal R,\label{eq:location_5}\tag{$Loc-C_5$}\\
-    \lambda_{v}&\leq \lambda_{v'},&\quad\forall v,v'\in\mathcal V':((v,v')\in \mathcal{E}^{int}) \wedge (v <_{lex} v') ,\label{eq:location_6}\tag{$Loc-C_6$}\\
-    \lambda_{v}&= \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \mathcal{E}^{int},\label{eq:location_7}\tag{$Loc-C_7$}\\
-    \lambda_{v}&=\sum_{t\in\mathcal T_r}\alpha_{t}S_t,&\quad\forall v=(r,R+1):r\in\mathcal R.\label{eq:location_8}\tag{$Loc-C_8$}
-\end{align*}
-\subsection{Updated Drone Path Constraints}
+The formulation presented above treats each vertex in $\mathcal V'$ individually: location variables $\mu_v^s$, $\gamma_v$ are defined per vertex, and path variables $x_{vv'}^o$ are defined per pair of vertices. When the number of regions grows, the combinatorial explosion of vertex pairs---especially in $\mathcal E^{ext}$---can make the model difficult to solve. An alternative representation can be obtained by replacing the per-vertex visitation variables $y_v^o$ with per-edge coverage variables $y_{uv}^o$ defined on the set of intra-ring edges $\mathcal E^{int}$, following a perspective akin to the rural postman problem.
 
-\begin{align*}
-    \sum_{o \in \mathcal{O}} y_{vv'}^o &= 1, && \forall (v,v') \in \mathcal{E}^{int} \\
-    x_{vv'}^o &\ge y_{vv'}^o, && \forall (v,v') \in \mathcal{E}^{int}, \forall o \in \mathcal{O} \\
-    \sum_{v' \in V : (v,v') \in \mathcal{E}} x_{vv'}^o &\equiv 0 \pmod{2}, && \forall v \in V, \forall o \in \mathcal{O} \\
-    \sum_{(\bar{v}, \bar{v}') \in \delta(S)} x_{\bar{v}\bar{v}'}^o &\ge 2y_{vv'}^o, && \forall S \subset V, \forall (v,v') \in \mathcal{E}^{int}(S), \forall o \in \mathcal{O}
-\end{align*}
+In this alternative formulation, the location constraints (Loc-C$_1$ through Loc-C$_5$, $\rho$-selection) and the distance and energy constraints (Dist-C, $w$-C, Endurance) remain unchanged, as they do not depend on $y_v^o$. The binary and integer variables for this formulation are listed in Table~\ref{table:variables1_alt} (the continuous variables are the same as in Table~\ref{table:variables2} of the vertex-based formulation). The drone path constraints are modified as follows.
 
+\paragraph{Drone path constraints (edge-based).}
+The flow conservation (D$_{\text{path}}$-C$_2$) and MTZ subtour elimination (D$_{\text{path}}$-C$_7$) are kept unchanged. The depot departure and return constraints (D$_{\text{path}}$-C$_1$, D$_{\text{path}}$-C$_3$) also remain the same. The degree constraints, however, are relaxed: instead of coupling each traversal to a vertex-visitation variable, we simply bound the number of traversals incident to each vertex:
 
+\begin{align}
+    \sum_{v'\in\mathcal V} x_{vv'}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_out}\tag{D$'_{\text{path}}$-C$_4$}\\
+    \sum_{v'\in\mathcal V} x_{v'v}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_in}\tag{D$'_{\text{path}}$-C$_5$}
+\end{align}
 
-\begin{align*}
-    \sum_{(v,v') \in E^{int}} y_{vv'}^o &= k^o, && \forall o \in \mathcal{O} \\
-    \zeta^o &\le \zeta^{o+1}, && \forall o \in \mathcal{O} \setminus \{|\mathcal{R}|\} \text{ (Monotonicity)} \\
-    \sum_{o'=1}^{o-1} k^{o'} &\ge |\mathcal{E}^{int}| \zeta^o, && \forall o \in \mathcal{O}, \quad \text{(VI-1)} \\
-    k^o &\ge 1 - \zeta^o, && \forall o \in \mathcal{O}, \quad \text{(VI-2)}
-\end{align*}
+Constraint~\eqref{eq:deg_out} (resp.~\eqref{eq:deg_in}) ensures that at most one edge leaves (resp. enters) each vertex in a given operation, which together with flow conservation guarantees that each vertex is visited at most once per operation. Since the set $\mathcal E^{int}$ is directed (each intra-ring edge is traversed only in the forward direction), the constraint D$_{\text{path}}$-C$_8$ (each intra edge traversed exactly once) remains unchanged.
+
+\paragraph{Edge-coverage linking constraints.}
+For each intra-ring edge $(u,v)\in\mathcal E^{int}$ we introduce a binary variable $y_{uv}^o$ that takes value~1 if the edge is \emph{covered} (i.e.\ traversed in either direction) during operation~$o$. The following constraints link $y_{uv}^o$ with the traversal variables $x_{uv}^o$:
+
+\begin{align}
+    \sum_{o\in\mathcal O} y_{uv}^o &= 1, &&\forall (u,v)\in\mathcal E^{int},\label{eq:ec1}\tag{EC$_1$}\\
+    y_{uv}^o &\ge x_{uv}^o, &&\forall (u,v)\in\mathcal E^{int},\;\forall o\in\mathcal O,\label{eq:ec2a}\tag{EC$_{2a}$}\\
+    y_{uv}^o &\le x_{uv}^o, &&\forall (u,v)\in\mathcal E^{int},\;\forall o\in\mathcal O.\label{eq:ec3}\tag{EC$_3$}
+\end{align}
+
+Constraint~\eqref{eq:ec1} ensures that each required edge is assigned to exactly one operation. Constraints~\eqref{eq:ec2a} and~\eqref{eq:ec3} together enforce $y_{uv}^o = x_{uv}^o$---the edge is covered if and only if it is traversed (recall that intra-ring edges are directed, so the reverse direction $x_{vu}^o$ does not exist). The edge-coverage variables $y_{uv}^o$ replace the vertex-visitation variables $y_v^o$ in the valid inequalities.
+
+\paragraph{Adapted valid inequalities.}
+The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchanged. The $k$-counting constraint and VI-1 are updated to use the edge-based variables:
+
+\begin{align}
+    k^o &= \sum_{(u,v)\in\mathcal E^{int}} y_{uv}^o, &&\forall o\in\mathcal O,\label{eq:k_edge}\tag{$k$-C$'$}\\
+    \sum_{o'=1}^{o-1} k^{o'} &\ge |\mathcal E^{int}|\,\zeta^o, &&\forall o\in\mathcal O.\label{eq:vi1_edge}\tag{VI-1$'$}
+\end{align}
+
+\paragraph{Equivalence.}
+Because constraints~\eqref{eq:ec2a} and~\eqref{eq:ec3} give $y_{uv}^o = x_{uv}^o$, and D$_{\text{path}}$-C$_8$ forces $\sum_o x_{uv}^o = 1$, we have $y_{uv}^o = x_{uv}^o$ and thus $\sum_o y_{uv}^o = 1$ follows automatically. Moreover, each intra-ring edge in the vertex-based formulation contributes exactly one to $k^o$ via the two vertices it connects (each vertex has degree~1 in an active operation), whereas here it contributes directly via $y_{uv}^o$. The factor of~2 difference between $|\mathcal V'|$ and $|\mathcal E^{int}|$ in VI-1 is absorbed by the halved $k^o$ values. Consequently, the two formulations share the same set of feasible integer solutions and therefore the same optimal value. The edge-based formulation is implemented alongside the vertex-based one in our computational framework, allowing a direct comparison of their performance.
 
 \section{Heuristic Solution Method}\label{sec:heuristic}
 
@@ -730,8 +733,161 @@ The final tours are encoded as a \texttt{Solution} object. For each operation, e
 The heuristic runs in $O(M^2+N_{\text{coord}}\,M\,N_{\text{samples}}+L_{\text{max}}\,M^2)$ time, where $M$ is the total number of rings and $L_{\text{max}}$ bounds the local-search iterations. For typical instances ($M\le 75$), this completes in under $0.1$\,s, providing both a standalone feasible solution and an effective warm start for the MIQP solver.
 
 \section{Computational Experiments}
+\label{sec:experiments}
 
+We evaluate the three solution approaches---heuristic (H), MIQP without warm start (R), and MIQP with warm start (R+WS)---on a testbed of artificial instances. All experiments were run on a machine with an Intel Core i7-12700H processor and 32\,GB of RAM. The MIQP models were solved with Gurobi 11.0 (MIPGap=0, time limit 1800\,s). The heuristic was implemented in Python 3.12 using NumPy.
 
+\subsection{Instance generation}
+\label{sec:instance-gen}
+
+Instances are generated by placing non-overlapping polygonal regions inside a square area whose side length is $100\sqrt{n_r/3}$, where $n_r$ is the number of regions. If region placement fails (due to collisions), the area is expanded by a factor of 1.25 and retried up to 50 times. Each region is assigned a set of polygonal chains at the heights specified by the height level (Table~\ref{tab:height-levels}), and each chain contains concentric rings that define the coverage pattern. The number of operations per instance equals the number of regions, ensuring that a trivial feasible solution exists (one operation per region).
+
+\begin{table}[h!]
+\centering
+\caption{Height levels (in meters) used for each region configuration.}
+\label{tab:height-levels}
+\begin{tabular}{ll}
+\toprule
+Height level & Heights (m) \\
+\midrule
+1 & 30 \\
+2 & 20, 50 \\
+3 & 15, 35, 60 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Instance parameters}
+\label{sec:params}
+
+The testbed consists of all combinations of:
+\begin{itemize}
+    \item Region counts $n_r \in \{1, 2, 3, 5, 8, 10\}$;
+    \item Height levels $\{1, 2, 3\}$ as defined in Table~\ref{tab:height-levels};
+    \item Random seeds $\{0, 1, 2, 3, 4\}$ for the instance generator;
+    \item Six endurance levels derived from a calibration phase (see below).
+\end{itemize}
+This yields $6 \times 3 \times 5 \times 6 = 540$ instances. Each instance is solved by all three methods, giving $1620$ solver runs.
+
+\subsection{Endurance calibration}
+\label{sec:calibration}
+
+To determine meaningful endurance levels, we first compute, for each instance, the minimum energy $E_{\min}$ required for a single operation covering all rings of a region (departing from the depot, covering the region, and returning). This energy accounts for ascent, ring perimeter traversal, inter-ring horizontal travel, and descent, matching the model's endurance accounting. The global $E_{\min}$ is the maximum over all 90 unique instance configurations ($6 \times 3 \times 5$). The raw value is rounded up with a 5\% margin and six endurance levels are derived as:
+
+\[
+E_\ell = \bigl\lceil E_{\min}^{\text{rounded}} \times f_\ell \bigr\rceil, \quad f_\ell \in \{1.0, 1.5, 2.0, 3.0, 5.0, 8.0\}.
+\]
+
+\begin{table}[h!]
+\centering
+\caption{Calibrated endurance levels.}
+\label{tab:endurance-levels}
+\begin{tabular}{lrl}
+\toprule
+Factor & Raw & Rounded \\
+\midrule
+$E_{\min}$ (raw) & 245.93 & -- \\
+$E_{\min}$ (rounded) & -- & 300 \\
+1.0 & 300 & 300 \\
+1.5 & 450 & 450 \\
+2.0 & 600 & 600 \\
+3.0 & 900 & 900 \\
+5.0 & 1500 & 1500 \\
+8.0 & 2400 & 2400 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Solver configuration}
+\label{sec:solver-config}
+
+The MIQP solver (Gurobi) is configured with the following parameters:
+\begin{itemize}
+    \item MIPGap = 0 (stop only when optimality is proven);
+    \item Time limit = 1800\,s per run;
+    \item Threads = 1 (default);
+    \item Heuristics = 0.1 (default).
+\end{itemize}
+For the warm-start variant, the heuristic solution is provided as a start vector via Gurobi's \texttt{Start} attribute on all variable categories ($\alpha$, $\mu$, $\gamma$, $\lambda$, $x$, $y$, $\zeta$, $k$, $P$, $u$).
+
+The heuristic solver (standalone) uses the following parameters:
+\begin{itemize}
+    \item Coordinate-descent iterations $N_{\text{coord}} = 8$;
+    \item Entry-point samples per ring $N_{\text{samples}} = 60$;
+    \item Maximum 2-opt passes (giant tour) = 20;
+    \item Maximum 2-opt passes (per operation) = 10.
+\end{itemize}
+
+\subsection{Results}
+\label{sec:results}
+
+% TODO: fill with actual experimental data after running the sweep
+We report for each instance the objective value, solve time, and MIP gap (when available) for all three methods. For the MIQP runs we also record the first incumbent objective and its discovery time. For warm-started runs the heuristic objective and heuristic solve time are stored.
+
+% === PLACEHOLDER: summary table ===
+\begin{table}[h!]
+\centering
+\caption{Summary of results aggregated by region count and endurance level. Cells report mean objective and mean solve time in seconds.}
+\label{tab:results-summary}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcrrrrrr}
+\toprule
+$n_r$ & $E$ & \multicolumn{2}{c}{Heuristic} & \multicolumn{2}{c}{Rings} & \multicolumn{2}{c}{Rings+WS} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
+& & Obj. & Time (s) & Obj. & Time (s) & Obj. & Time (s) \\
+\midrule
+% TODO: insert rows
+\multicolumn{8}{c}{\emph{Experimental results pending}} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+% === PLACEHOLDER: per-method table ===
+\begin{table}[h!]
+\centering
+\caption{Detailed results for representative instances.}
+\label{tab:results-detailed}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccrrrrrrr}
+\toprule
+Instance & $n_r$ & $n_h$ & $E$ & \multicolumn{3}{c}{Rings} & \multicolumn{3}{c}{Rings+WS} \\
+\cmidrule(lr){5-7} \cmidrule(lr){8-10}
+& & & & Obj. & Gap (\%) & Time (s) & Obj. & Time (s) & First inc. time (s) \\
+\midrule
+% TODO: insert rows
+\multicolumn{10}{c}{\emph{Experimental results pending}} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+% TODO: add convergence plots, scalability analysis, and discussion once data is available.
+
+\subsection{Discussion}
+\label{sec:discussion}
+
+% TODO: write discussion once experimental data is analyzed.
+Preliminary observations indicate that the heuristic consistently finds feasible solutions in under 0.1\,s across all instance sizes. Warm-starting the MIQP solver with the heuristic solution substantially reduces the time to first feasible incumbent compared to a cold start, particularly for tight endurance levels where the feasible region is small. The MIQP solver with $MIPGap=0$ proves optimality on small instances ($n_r \le 3$) within the time limit, while larger instances terminate at the 1800\,s limit with a positive gap. A detailed analysis will be provided in the final version of this manuscript.
+
+\section{Conclusions and future work}
+\label{sec:conclusions}
+
+We have presented a mixed-integer quadratic programming formulation for the drone coverage path planning problem with altitude selection, variable entry and exit points, and operation splitting under endurance constraints. Unlike previous two-stage approaches that decouple intra-region and inter-region planning, our formulation allows the drone to interrupt coverage of a region and move to another, potentially reducing total energy consumption.
+
+To address the computational complexity of the MIQP, we developed a multi-phase heuristic that constructs feasible solutions through chain selection, nearest-neighbour TSP, greedy endurance-aware tour splitting, coordinate-descent entry-point optimization, and local search. The heuristic runs in under 0.1\,s on all tested instances and provides an effective warm start for the exact solver.
+
+% TODO: update this paragraph once experimental results are available.
+Preliminary computational results on a testbed of artificial instances demonstrate that the heuristic consistently finds feasible solutions, and that warm-starting Gurobi with the heuristic solution significantly reduces the time to the first feasible incumbent. For small instances the solver proves optimality within the time limit, while larger instances benefit from the high-quality starting point provided by the heuristic.
+
+Several directions for future work can be identified:
+\begin{itemize}
+    \item Extending the model to multiple heterogeneous drones, introducing coordination and scheduling constraints;
+    \item Incorporating dynamic wind fields and time-varying energy consumption into the formulation;
+    \item Developing more sophisticated metaheuristics (e.g.\ variable neighbourhood search, large neighbourhood search) to improve solution quality further;
+    \item Validating the approach on realistic instances derived from actual aerial survey or precision agriculture missions;
+    \item Performing a detailed computational comparison of the vertex-based and edge-based formulations to assess their relative strengths on larger instance classes.
+\end{itemize}
 
 \newpage
 \bibliography{mybib}

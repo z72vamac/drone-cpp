@@ -1,9 +1,9 @@
-"""Compare solver variants across instance sizes and endurance levels.
+"""Compare edge-based solver variants across instance sizes and endurance levels.
 
 Runs three methods on every instance:
   1. heuristic   - greedy + 2-opt standalone solver
-  2. rings       - Gurobi MIQP (vertex-based) without warm start
-  3. rings_ws    - Gurobi MIQP (vertex-based) warm-started with heuristic
+  2. edges       - Gurobi MIQP (edge-based) without warm start
+  3. edges_ws    - Gurobi MIQP (edge-based) warm-started with heuristic
 
 Phase 0 (--calibrate): estimate the global minimum endurance needed to visit
 all rings of any region (across all configurations and seeds) without Gurobi.
@@ -14,10 +14,10 @@ run all three methods, and log results incrementally to results.csv.
 Supports --resume to skip already-completed runs.
 
 Usage:
-    python compare_methods.py --calibrate          # Phase 0 only (~2 min)
-    python compare_methods.py                      # Full sweep
-    python compare_methods.py --resume             # Skip completed runs
-    python compare_methods.py --time-limit 600     # Shorter Gurobi limit
+    python compare_methods_edges.py --calibrate          # Phase 0 only (~2 min)
+    python compare_methods_edges.py                      # Full sweep
+    python compare_methods_edges.py --resume             # Skip completed runs
+    python compare_methods_edges.py --time-limit 600     # Shorter Gurobi limit
 """
 from __future__ import annotations
 import sys, os, csv, json, time, argparse, logging
@@ -38,7 +38,7 @@ from drone_cpp.config import (
     DEFAULT_AREA_BOUNDS, DEFAULT_REGION_SIZES, DEFAULT_SPACING,
 )
 
-logger = logging.getLogger("drone_cpp.compare_methods")
+logger = logging.getLogger("drone_cpp.compare_methods_edges")
 
 REGION_COUNTS = [1, 2, 3, 5, 8, 10]
 HEIGHT_LEVELS = [1, 2, 3]
@@ -51,10 +51,11 @@ HEIGHTS_BY_LEVEL = {
     3: [15.0, 35.0, 60.0],
 }
 
-OUT_DIR = "compare_results"
+OUT_DIR = "compare_results_edges"
 CSV_PATH = os.path.join(OUT_DIR, "results.csv")
 DONE_PATH = os.path.join(OUT_DIR, "completed_runs.txt")
 ENDURANCE_JSON = os.path.join(OUT_DIR, "endurance_levels.json")
+VERTEX_ENDURANCE_JSON = os.path.join("compare_results", "endurance_levels.json")
 SOLUTIONS_DIR = os.path.join(OUT_DIR, "solutions")
 
 CSV_FIELDS = [
@@ -113,14 +114,7 @@ def build_instance(num_regions, num_heights, seed, endurance=1e9):
 
 
 def _estimate_region_energy(inst, region, chain):
-    """Energy (model units) for one operation covering all rings of *chain*.
-
-    Matches the model's endurance accounting:
-      depot->region :  En_xy * dxy + En_z * height   (ascent)
-      ring traversal:  perimeter                      (model intra-ring energy)
-      inter-ring    :  dxy only, no En_xy             (model inter-ring energy)
-      region->depot :  En_xy * dxy                    (descent, no En_z)
-    """
+    """Energy (model units) for one operation covering all rings of *chain*."""
     depot = inst.depot
     drone = inst.drone
     wind = inst.wind
@@ -212,11 +206,16 @@ def calibrate(out_dir=OUT_DIR):
 
 
 def load_or_calibrate(force=False):
-    if not force and os.path.exists(ENDURANCE_JSON):
-        with open(ENDURANCE_JSON) as f:
+    path = ENDURANCE_JSON
+    if not force and os.path.exists(VERTEX_ENDURANCE_JSON):
+        path = VERTEX_ENDURANCE_JSON
+        logger.info("Using vertex-based endurance levels from %s",
+                    VERTEX_ENDURANCE_JSON)
+    if not force and os.path.exists(path):
+        with open(path) as f:
             data = json.load(f)
         logger.info("Loaded endurance levels from %s: %s",
-                    ENDURANCE_JSON, data["values"])
+                    path, data["values"])
         return data["values"]
     return calibrate()
 
@@ -310,62 +309,62 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                       status="FAILED"))
                         mark_done(key_h)
 
-                    # ---- rings (no warm start) ----
-                    key_r = "%d,%d,%d,%d,rings" % (nr, nh, seed, E)
+                    # ---- edges (no warm start) ----
+                    key_e = "%d,%d,%d,%d,edges" % (nr, nh, seed, E)
                     idx += 1
-                    if key_r not in done:
-                        logger.info("[%d/%d] r%d h%d s%d e%d  rings",
+                    if key_e not in done:
+                        logger.info("[%d/%d] r%d h%d s%d e%d  edges",
                                     idx, total, nr, nh, seed, E)
                         try:
-                            model = build_model(inst, "rings", verbose=False)
+                            model = build_model(inst, "edges", verbose=False)
                             model.model.setParam("MIPGap", mip_gap)
                             nv = model.model.NumVars
                             nc = model.model.NumConstrs
                             t0 = time.time()
-                            sol_r = model.optimize(tl=time_limit)
+                            sol_e = model.optimize(tl=time_limit)
                             elapsed = time.time() - t0
-                            if sol_r is not None:
-                                sol_r.save(_sol_path(nr, nh, seed, E, "rings"))
+                            if sol_e is not None:
+                                sol_e.save(_sol_path(nr, nh, seed, E, "edges"))
                                 emit(_row(
-                                    nr, nh, seed, E, "rings",
-                                    objective="%.4f" % sol_r.objective_value,
+                                    nr, nh, seed, E, "edges",
+                                    objective="%.4f" % sol_e.objective_value,
                                     solve_time="%.2f" % elapsed,
-                                    mip_gap=("%.4f" % sol_r.mip_gap
-                                             if sol_r.mip_gap is not None else ""),
+                                    mip_gap=("%.4f" % sol_e.mip_gap
+                                             if sol_e.mip_gap is not None else ""),
                                     first_incumbent_obj=(
-                                        "%.4f" % sol_r.first_incumbent_obj
-                                        if sol_r.first_incumbent_obj is not None else ""),
+                                        "%.4f" % sol_e.first_incumbent_obj
+                                        if sol_e.first_incumbent_obj is not None else ""),
                                     first_incumbent_time=(
-                                        "%.2f" % sol_r.first_incumbent_time
-                                        if sol_r.first_incumbent_time is not None else ""),
+                                        "%.2f" % sol_e.first_incumbent_time
+                                        if sol_e.first_incumbent_time is not None else ""),
                                     heuristic_time="%.2f" % heur_time,
-                                    num_ops=len(sol_r.operations),
-                                    status=sol_r.status or "?",
+                                    num_ops=len(sol_e.operations),
+                                    status=sol_e.status or "?",
                                     n_vars=nv, n_constrs=nc))
                             else:
-                                emit(_row(nr, nh, seed, E, "rings",
+                                emit(_row(nr, nh, seed, E, "edges",
                                           solve_time="%.2f" % elapsed,
                                           heuristic_time="%.2f" % heur_time,
                                           status="INFEASIBLE",
                                           n_vars=nv, n_constrs=nc))
                         except Exception as ex:
-                            logger.error("  rings FAILED %s: %s",
+                            logger.error("  edges FAILED %s: %s",
                                          (nr, nh, seed, E), ex)
-                            emit(_row(nr, nh, seed, E, "rings", status="ERROR"))
-                        mark_done(key_r)
+                            emit(_row(nr, nh, seed, E, "edges", status="ERROR"))
+                        mark_done(key_e)
 
-                    # ---- rings_ws (warm start with heuristic) ----
-                    key_w = "%d,%d,%d,%d,rings_ws" % (nr, nh, seed, E)
+                    # ---- edges_ws (warm start with heuristic) ----
+                    key_w = "%d,%d,%d,%d,edges_ws" % (nr, nh, seed, E)
                     idx += 1
                     if key_w not in done:
-                        logger.info("[%d/%d] r%d h%d s%d e%d  rings_ws",
+                        logger.info("[%d/%d] r%d h%d s%d e%d  edges_ws",
                                     idx, total, nr, nh, seed, E)
                         if sol_h is None:
-                            emit(_row(nr, nh, seed, E, "rings_ws",
+                            emit(_row(nr, nh, seed, E, "edges_ws",
                                       status="SKIPPED_NO_HEURISTIC"))
                         else:
                             try:
-                                model = build_model(inst, "rings", verbose=False)
+                                model = build_model(inst, "edges", verbose=False)
                                 model.model.setParam("MIPGap", mip_gap)
                                 nv = model.model.NumVars
                                 nc = model.model.NumConstrs
@@ -374,9 +373,9 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                 sol_w = model.optimize(tl=time_limit)
                                 elapsed = time.time() - t0
                                 if sol_w is not None:
-                                    sol_w.save(_sol_path(nr, nh, seed, E, "rings_ws"))
+                                    sol_w.save(_sol_path(nr, nh, seed, E, "edges_ws"))
                                     emit(_row(
-                                        nr, nh, seed, E, "rings_ws",
+                                        nr, nh, seed, E, "edges_ws",
                                         objective="%.4f" % sol_w.objective_value,
                                         solve_time="%.2f" % elapsed,
                                         mip_gap=("%.4f" % sol_w.mip_gap
@@ -393,16 +392,16 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                         status=sol_w.status or "?",
                                         n_vars=nv, n_constrs=nc))
                                 else:
-                                    emit(_row(nr, nh, seed, E, "rings_ws",
+                                    emit(_row(nr, nh, seed, E, "edges_ws",
                                               solve_time="%.2f" % elapsed,
                                               status="INFEASIBLE",
                                               heuristic_obj="%.4f" % sol_h.objective_value,
                                               heuristic_time="%.2f" % heur_time,
                                               n_vars=nv, n_constrs=nc))
                             except Exception as ex:
-                                logger.error("  rings_ws FAILED %s: %s",
+                                logger.error("  edges_ws FAILED %s: %s",
                                              (nr, nh, seed, E), ex)
-                                emit(_row(nr, nh, seed, E, "rings_ws",
+                                emit(_row(nr, nh, seed, E, "edges_ws",
                                           status="ERROR",
                                           heuristic_obj="%.4f" % sol_h.objective_value,
                                           heuristic_time="%.2f" % heur_time))

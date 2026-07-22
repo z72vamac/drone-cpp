@@ -5,6 +5,7 @@ from .data_structures import Instance
 from .models.base import BaseModel
 from .models.mip_v1 import V1Model as CPPModel
 from .models.mip_rings import RingsModel
+from .models.mip_edges import EdgesModel
 
 
 def build_model(instance: Instance, model_type: str = "rings",
@@ -13,5 +14,7 @@ def build_model(instance: Instance, model_type: str = "rings",
         return CPPModel(instance, verbose)
     elif model_type in ("rings", "v2"):
         return RingsModel(instance, verbose)
+    elif model_type == "edges":
+        return EdgesModel(instance, verbose)
     else:
         raise ValueError(f"Unknown model type: {model_type}")
