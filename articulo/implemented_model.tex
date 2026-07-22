@@ -144,10 +144,14 @@ They match the paper except for subtour elimination:
         && \forall (u,v)\in\mathcal E_{RL}^{int}. \tag{DP8}
 \end{align}
 
-\noindent \textbf{Difference:} The paper uses exponential DFJ constraints
-(original DP7). The implementation uses MTZ ($u_v^o$), which requires
-$O(|\mathcal V'|^2 |\mathcal O|)$ constraints but is manageable for
-small instances.
+\noindent The paper's main formulation uses the same MTZ constraints. The paper also
+describes an alternative edge-based formulation that replaces MTZ with
+Dantzig--Fulkerson--Johnson (DFJ) exponential subtour elimination constraints,
+separated dynamically via a lazy constraint callback during the branch-and-cut
+search (see Section~\ref{sec:edge-model} below). Both are implemented in the
+codebase~\footnote{The vertex-based model is \texttt{RingsModel} in
+\texttt{mip\_rings.py}, the edge-based model is \texttt{EdgesModel} in
+\texttt{mip\_edges.py}.}.
 
 \section{Intra-region distances}
 
@@ -279,6 +283,74 @@ where $\ell_{uv}^o$ linearizes the product $x_{uv}^o \cdot w_{uv}$.
 the implementation does exactly the same, but with explicit
 linearization of the product $x\cdot d$.
 
+\section{Edge-based alternative (EdgesModel)}\label{sec:edge-model}
+
+Alongside \texttt{RingsModel}, the codebase implements an alternative formulation
+in \texttt{mip\_edges.py} (class \texttt{EdgesModel}) that replaces vertex-visitation
+variables $y_v^o$ with edge-coverage variables $y_{uv}^o$ defined on the set of
+intra-ring edges $\mathcal E^{int}$, following a perspective akin to the rural
+postman problem.
+
+\subsection*{Variables}
+
+The binary variables $y_{uv}^o$ indicate whether the intra-ring edge $(u,v)$ is
+covered in operation $o$. The integer variable $k^o$ counts the number of
+covered edges instead of the number of visited vertices. All other variables
+($x_{vv'}^o$, $\zeta^o$, $\alpha_t$, $\mu_v^{ts}$, $\gamma_v$, $\lambda_v$,
+$P_v$, etc.) remain unchanged. The MTZ auxiliary variables $u_v^o$ are omitted.
+
+\subsection*{Modified constraints}
+
+The flow conservation (DP2) and depot constraints (DP1, DP3) are kept. The
+degree constraints DP4--DP5 are relaxed to $\le 1$ (at most one edge leaves
+or enters each vertex per operation). The vertex-visitation equalities
+DP6 are removed, replaced by edge-coverage linking constraints:
+
+\begin{align}
+  \sum_{o\in\mathcal O} y_{uv}^o &= 1,
+    &&\forall (u,v)\in\mathcal E^{int}, \tag{EC1}\\
+  y_{uv}^o &= x_{uv}^o,
+    &&\forall (u,v)\in\mathcal E^{int},\; \forall o\in\mathcal O. \tag{EC2}
+\end{align}
+
+\subsection*{Subtour elimination: DFJ lazy cuts}
+
+The MTZ subtour elimination is not used. Instead, the model enforces subtour
+elimination via the exponential family of Dantzig--Fulkerson--Johnson (DFJ)
+constraints, separated dynamically through a lazy constraint callback:
+
+\begin{equation}
+  \sum_{u\in S,\,v\notin S} x_{uv}^o \ge 1,
+    \qquad \forall S\subsetneq\mathcal V': v_0\notin S,\; \forall o\in\mathcal O,
+    \tag{DFJ}
+\end{equation}
+
+At each feasible integer incumbent, a breadth-first search from the depot
+identifies, for each operation $o$, the connected components of the subgraph
+induced by edges with $x_{uv}^o = 1$. Any component that does not contain the
+depot triggers the addition of cut~(DFJ). The callback is implemented using
+Gurobi's \texttt{MIPSOL} callback with \texttt{LazyConstraints=1}.
+
+\subsection*{Idle operations}
+
+An additional constraint forces all traversal variables to zero in idle
+operations ($\zeta^o = 1$), preventing the lazy callback from adding
+spurious cuts:
+
+\begin{equation}
+  \sum_{u,v} x_{uv}^o \le |\mathcal V|^2\,(1 - \zeta^o),
+    \qquad \forall o\in\mathcal O. \tag{IDLE}
+\end{equation}
+
+\subsection*{Relationship to the paper}
+
+The alternative edge-based formulation described in Section~4.2 of the paper
+matches this implementation exactly: the paper's relaxed degree constraints
+(D$'_{\text{path}}$-C$_4$, D$'_{\text{path}}$-C$_5$) correspond to the
+$\le 1$ degree bounds above; the DFJ lazy cut separation is described in
+the paper under ``Drone path constraints (edge-based)''; and the edge-coverage
+linking (EC$_1$, EC$_{2a}$, EC$_3$) is identical.
+
 \section{Summary of differences}
 
 \begin{center}
@@ -288,7 +360,8 @@ Aspect & Paper & Implementation \\
 \midrule
 Intra-RL distance & $\beta_{vv'}^{ss'} = \mu_v^s \mu_{v'}^{s'}$ (bilinear) & $dfs_v$ with $\eta_v^{ts} = \mu_v^{ts}\gamma_v$ linearized \\
 Intra-RL energy & Analogous to distance & Same $efs_v$ strategy \\
-Subtours & DFJ (exponential) & MTZ ($u_v^o$, polynomial) \\
+Subtours (vertex-based) & MTZ ($u_v^o$) & MTZ ($u_v^o$) \\
+Subtours (edge-based)   & DFJ (lazy cuts)   & DFJ (lazy cuts)   \\
 START/END fixing & Implicit ($\lambda$) & Explicit (LC5b, LC8b) \\
 Depot energy $\uparrow$ & $\rho_r + \rho_0$ variable & $\rho_0$ constant \\
 Linearization & $\beta$ bilinear not linearized & All bilinearities explicitly linearized \\

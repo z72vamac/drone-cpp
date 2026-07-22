@@ -1,13 +1,15 @@
-"""Edge-based MIQP formulation.
+"""Edge-based MIQP formulation with DFJ lazy subtour elimination.
 
 Replaces per-vertex visitation variables y_v^o with per-edge coverage
 variables y_{uv}^o defined on intra-ring edges only.  Degree constraints
-are relaxed to at-most-one (<= 1) — the absent y_v^o makes the exact
-equality unnecessary — and the subtour-elimination MTZ constraints are
-shared with the vertex-based model.
+are relaxed to at-most-one (<= 1).  Instead of MTZ vertex-potential
+constraints, subtour elimination is enforced via Dantzig–Fulkerson–Johnson
+(DFJ) cut constraints separated lazily during branch-and-bound through a
+MIPSOL callback that detects disconnected components per operation.
 """
 
 from __future__ import annotations
+from collections import defaultdict
 from typing import Dict, Tuple
 
 import gurobipy as gp
@@ -182,23 +184,17 @@ class EdgesModel(RingsModel):
                                   if (u, v, o) in self.x)
                 self.model.addConstr(inn <= 1, name=f"DP5p_{v}_o{o}")
 
-        # DP7: MTZ subtour elimination (unchanged)
-        nV = len(Vp)
-        self._uvar = {}
-        for v in Vp:
-            for o in Or:
-                self._uvar[(v, o)] = self.model.addVar(
-                    lb=1, ub=nV, vtype=GRB.INTEGER, name=f"u_{v}_o{o}")
-        for v1 in Vp:
-            for v2 in Vp:
-                if v1 != v2:
-                    for o in Or:
-                        k = (v1, v2, o)
-                        if k in self.x:
-                            self.model.addConstr(
-                                self._uvar[(v1, o)] - self._uvar[(v2, o)] + 1
-                                <= nV * (1 - self.x[k]),
-                                name=f"DP7_{v1}_{v2}_o{o}")
+        # DP7 removed (MTZ replaced by DFJ lazy cuts in optimize()) ————
+        # DFJ cut separation for subtour elimination is performed via
+        # a lazy-constraint callback in self.optimize().
+        # ———————————————————————————————————————————————————
+
+        # DP9: idle operations must have no edges
+        for o in Or:
+            self.model.addConstr(
+                gp.quicksum(self.x[k] for k in self.x if k[2] == o)
+                <= len(self.all_nodes) * len(self.all_nodes) * (1 - self.zeta[o]),
+                name=f"DP9_o{o}")
 
         # DP8: each intra edge traversed exactly once (unchanged)
         for (u, v) in self._intra_rl:
@@ -335,15 +331,6 @@ class EdgesModel(RingsModel):
 
             if used:
                 edges = ops[o].edges
-                verts_in_op = set()
-                vert_order = []
-                for u, v in edges:
-                    if u != dep_v and u not in verts_in_op:
-                        verts_in_op.add(u)
-                        vert_order.append(u)
-                    if v != dep_v and v not in verts_in_op:
-                        verts_in_op.add(v)
-                        vert_order.append(v)
 
                 # Count covered intra edges and set y_edge starts
                 edge_count = 0
@@ -365,12 +352,6 @@ class EdgesModel(RingsModel):
                     xk = (u, v, o)
                     if xk in self.x:
                         self.x[xk].Start = 1.0
-
-                # MTZ position (same as RingsModel)
-                for pos, vert in enumerate(vert_order, 1):
-                    uk = (vert, o)
-                    if uk in self._uvar:
-                        self._uvar[uk].Start = pos
             else:
                 self.k[o].Start = 0
                 for (u, v) in self._intra_rl:
@@ -388,21 +369,73 @@ class EdgesModel(RingsModel):
         self.model.update()
 
     # ------------------------------------------------------------------
-    # Optimize — identical to RingsModel except we never need y_v^o
+    # Optimize — DFJ lazy subtour elimination via MIPSOL callback
     # ------------------------------------------------------------------
     def optimize(self, tl=3600.):
         self.model.setParam("TimeLimit", tl)
         self.model.setParam("MIPFocus", DEFAULT_MIP_FOCUS)
         self.model.setParam("Heuristics", DEFAULT_HEURISTICS)
+        self.model.setParam("LazyConstraints", 1)
 
         first_info = [None, None]
+        all_nodes = self.all_nodes
+        verts = self.verts
+        depot = self.depot_v
+        x_dict = self.x
+        zeta_dict = self.zeta
 
-        def _cb(model, where):
-            if where == GRB.Callback.MIPSOL and first_info[0] is None:
-                first_info[0] = model.cbGet(GRB.Callback.MIPSOL_OBJ)
-                first_info[1] = model.cbGet(GRB.Callback.RUNTIME)
+        def _separate_subtours(model, where):
+            if where == GRB.Callback.MIPSOL:
+                # Track first incumbent
+                if first_info[0] is None:
+                    first_info[0] = model.cbGet(GRB.Callback.MIPSOL_OBJ)
+                    first_info[1] = model.cbGet(GRB.Callback.RUNTIME)
 
-        self.model.optimize(callback=_cb)
+                # DFJ cut separation per active operation
+                for o in range(self.O):
+                    zeta_val = model.cbGetSolution(zeta_dict[o])
+                    if zeta_val > 0.5:
+                        continue  # idle (DP9 forces all x=0)
+
+                    # Build directed adjacency for this operation
+                    adj = defaultdict(list)
+                    for (u, v, o2), var in x_dict.items():
+                        if o2 == o and model.cbGetSolution(var) > 0.5:
+                            adj[u].append(v)
+
+                    # BFS from depot to find reachable vertices
+                    reached = {depot}
+                    stack = [depot]
+                    while stack:
+                        n = stack.pop()
+                        for nb in adj.get(n, []):
+                            if nb not in reached:
+                                reached.add(nb)
+                                stack.append(nb)
+
+                    # Find subtour components (verts not reached from depot)
+                    unvisited = [v for v in verts if v not in reached]
+                    while unvisited:
+                        start = unvisited[0]
+                        component = {start}
+                        q = [start]
+                        while q:
+                            n = q.pop()
+                            for nb in adj.get(n, []):
+                                if nb in all_nodes and nb not in component and nb not in reached:
+                                    component.add(nb)
+                                    q.append(nb)
+                        unvisited = [v for v in unvisited if v not in component]
+
+                        # Build DFJ cut: at least one edge must leave S
+                        cut = gp.LinExpr()
+                        for u in component:
+                            for v in all_nodes:
+                                if v not in component and (u, v, o) in x_dict:
+                                    cut += x_dict[(u, v, o)]
+                        model.cbLazy(cut >= 1)
+
+        self.model.optimize(callback=_separate_subtours)
         st = self.model.Status
         if self.model.SolCount == 0:
             return None

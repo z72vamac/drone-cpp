@@ -153,7 +153,7 @@ Indeed, drones have been successfully adopted in different contexts. For example
 In this paper we focus on coverage of areas in the plane by a single drone. We propose a mixed-integer quadratic programming (MIQP) formulation that jointly optimizes the altitude, the entry and exit points, and the sequence of operations respecting a limited energy budget. Unlike existing two-stage approaches that first plan intra-region paths and then solve an inter-region routing problem, our formulation allows the drone to interrupt the coverage of a region and resume it later, potentially reducing total energy consumption. To tackle large instances, we also develop a multi-phase constructive heuristic that provides high-quality feasible solutions in under 0.1\,s and can be used to warm-start the exact solver. The main contributions of this paper are:
 \begin{itemize}
     \item A MIQP formulation for the drone coverage path planning problem integrating altitude selection, variable entry/exit points, and operation splitting under endurance constraints.
-    \item An equivalent edge-based reformulation that replaces vertex-visitation variables with edge-coverage variables, offering a different trade-off between constraint structure and relaxation strength.
+    \item An equivalent edge-based reformulation that replaces vertex-visitation variables with edge-coverage variables and uses DFJ lazy subtour elimination, offering a different trade-off between constraint structure and relaxation strength.
     \item A multi-phase heuristic combining chain selection, nearest-neighbour TSP, 2-opt improvement, greedy endurance-aware tour splitting, and coordinate-descent entry-point optimization.
     \item A computational study on a testbed of artificial instances with varying numbers of regions, altitude levels, and endurance values, comparing the exact solver with and without warm-start against the standalone heuristic and the two equivalent MIQP formulations.
 \end{itemize}
@@ -292,7 +292,7 @@ Constraints \eqref{eq:location_4} define the values of $\lambda_v$ in relation w
 \end{figure}
 
 \subsection{Drone path constraints}
-In this subsection, we describe the set of constraints related to the operations that the drone must perform to visit all vertices described in $\mathcal V'$. In this context, we define four families of variables that model the path. Let $x_{vv'}^o$ be a binary variable that is one if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. Let $y_v^o$ be a binary variable that is one if the vertex $v$ is visited during the operation $o$. Let also $\zeta^o$ be a binary variable that is one if all vertices are visited before starting the operation $o$. Finally, we count the number of vertices visited in operation $o$ by means of the integer variable $k^o$.
+In this subsection, we describe the set of constraints related to the operations that the drone must perform to visit all vertices described in $\mathcal V'$. In this context, we define several families of variables that model the path. Let $x_{vv'}^o$ be a binary variable that is one if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. Let $y_v^o$ be a binary variable that is one if the vertex $v$ is visited during the operation $o$. Let also $\zeta^o$ be a binary variable that is one if all vertices are visited before starting the operation $o$. We count the number of vertices visited in operation $o$ by means of the integer variable $k^o$. Additionally, $u_v^o$ is a continuous variable that represents the position of vertex $v$ in the tour of operation $o$, used in the subtour elimination constraints.
 
 \begin{align*}
 \sum_{v'\in \mathcal V} x_{v_0v'}^{o}&=1-\zeta^o,&\quad \forall o\in\mathcal O,\label{eq:drone_path_1}\tag{$D_{path}-C_1$}\\
@@ -301,13 +301,12 @@ In this subsection, we describe the set of constraints related to the operations
 \sum_{v'\in\mathcal V} x_{vv'}^o&=y_{v}^o,&\quad\forall v\in\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_4}\tag{$D_{path}-C_4$}\\
 \sum_{v'\in\mathcal V} x_{v'v}^o&=y_{v}^o,&\quad\forall v\in\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_5}\tag{$D_{path}-C_5$}\\
 \sum_{o\in\mathcal O}y_v^o&=1,&\quad\forall v\in\mathcal V',\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
-\sum_{v,v'\in \mathcal V''} x_{vv'}^o&\leq |\mathcal V''|-1,&\forall \mathcal V''\subseteq\mathcal V,\forall o\in\mathcal O,\label{eq:drone_path_7}\tag{$D_{path}-C_7$}\\
-\sum_{o\in\mathcal O} x_{vv'}^o &= 1, &\forall v,v'\in\mathcal V':(v,v')\in\CV{\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^{S}\cup\mathcal E_{RL}^{T}}\label{eq:drone_path_8}\tag{$D_{path}-C_8$}. 
-% u_v^o-u_{v'}^o + 1&\leq (k^o-1)(1-x_{vv'}^o)&\quad\forall v,v'\in\mathcal V\setminus\{(0,0)\}:v \neq v',\forall o\in\mathcal O,\label{eq:drone_path_6}\tag{$D_{path}-C_6$}\\
-% \sum_{o, o' \in \mathcal O}(x_{vv'}^o+x_{v'v}^{o'})&\geq 1,&\forall v,v'\in\mathcal V':(v,v')\in \mathcal A^{int}, v<_{lex} v '.\label{eq:drone_path_7}\tag{$D_{path}-C_7$}
+u_v^o - u_{v'}^o + 1 &\leq |\mathcal V'|(1 - x_{vv'}^o), &\quad\forall v,v'\in\mathcal V':v\neq v',\forall o\in\mathcal O,\label{eq:drone_path_7}\tag{$D_{path}-C_7$}\\
+1 \leq u_v^o &\leq |\mathcal V'|, &\quad\forall v\in\mathcal V',\forall o\in\mathcal O.\label{eq:drone_path_7b}\tag{$D_{path}-C_{7b}$}\\
+\sum_{o\in\mathcal O} x_{vv'}^o &= 1, &\forall v,v'\in\mathcal V':(v,v')\in\CV{\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^{S}\cup\mathcal E_{RL}^{T}}\label{eq:drone_path_8}\tag{$D_{path}-C_8$}.
 \end{align*}
-Constraints \eqref{eq:drone_path_1} ensure that the drone exits from the depot if there is a vertex that is not already visited in operation $o$. Constraints \eqref{eq:drone_path_2} are the flow conservation constraints. Constraints \eqref{eq:drone_path_3} guarantee that drone operation ends in the depot if there is a vertex that has not been visited in operation $o$. Constraints \eqref{eq:drone_path_4} and \eqref{eq:drone_path_5} ensure that the vertex $v$ is visited if there is a path passing through this vertex. Constraints \eqref{eq:drone_path_6} impose that every vertex must be visited in some operation. Inequalities \eqref{eq:drone_path_7} represent the subtour elimination constraints for each tour made in each operation. Finally, constraints \eqref{eq:drone_path_8}
-guarantee that each polygonal chain is completed traversed. They impose that all the edges of the path graph associated with each region are traversed in some operation.
+Constraints \eqref{eq:drone_path_1} ensure that the drone exits from the depot if there is a vertex that is not already visited in operation $o$. Constraints \eqref{eq:drone_path_2} are the flow conservation constraints. Constraints \eqref{eq:drone_path_3} guarantee that drone operation ends in the depot if there is a vertex that has not been visited in operation $o$. Constraints \eqref{eq:drone_path_4} and \eqref{eq:drone_path_5} ensure that the vertex $v$ is visited if there is a path passing through this vertex. Constraints \eqref{eq:drone_path_6} impose that every vertex must be visited in some operation. Inequalities \eqref{eq:drone_path_7} are the Miller--Tucker--Zemlin (MTZ) subtour elimination constraints~\cite{MTZ1960}, which use the auxiliary variables $u_v^o$ to enforce that the tours in each operation contain no cycles that exclude the depot. The bounds \eqref{eq:drone_path_7b} define the range of these continuous variables. Finally, constraints \eqref{eq:drone_path_8}
+guarantee that each polygonal chain is completely traversed by requiring that all edges of the path graph associated with each region are traversed in some operation.
 
 \subsubsection*{Valid Inequalities}
 In this subsection, we present a set of valid inequalities for the representation of the drone path that are included in the formulation to enhance it. Let $\zeta^o$ be a binary variable that takes the value of one if all vertices have been visited before starting the operation $o$, and zero otherwise. If this is the case, then all vertices must also be visited before the operation $o+1$. Therefore, the $\zeta$ variables must satisfy the following monotonicity constraint:
@@ -512,7 +511,7 @@ The complete formulation of the CPP follows:
 \begin{mini*}[4]
         {}{W=\sum_{v, v'\in\mathcal V}\sum_{o\in\mathcal O} d_{vv'}x_{vv'}^o}
         {}{}\label{form:formulation}\tag{Formulation}
-        \addConstraint{\eqref{eq:drone_path_1}-\eqref{eq:drone_path_7}}{}
+        \addConstraint{\eqref{eq:drone_path_1}-\eqref{eq:drone_path_7b}}{}
         \addConstraint{\eqref{eq:mon}, \eqref{eq:k},\eqref{eq:VI-1}-\eqref{eq:VI-2}}{}
         \addConstraint{\eqref{eq:location_1}-\eqref{eq:location_7}}{}
         \addConstraint{\eqref{eq:distance_1}-\eqref{eq:distance_6}}{}
@@ -529,10 +528,20 @@ The complete formulation of the CPP follows:
 
 The formulation presented above treats each vertex in $\mathcal V'$ individually: location variables $\mu_v^s$, $\gamma_v$ are defined per vertex, and path variables $x_{vv'}^o$ are defined per pair of vertices. When the number of regions grows, the combinatorial explosion of vertex pairs---especially in $\mathcal E^{ext}$---can make the model difficult to solve. An alternative representation can be obtained by replacing the per-vertex visitation variables $y_v^o$ with per-edge coverage variables $y_{uv}^o$ defined on the set of intra-ring edges $\mathcal E^{int}$, following a perspective akin to the rural postman problem.
 
-In this alternative formulation, the location constraints (Loc-C$_1$ through Loc-C$_5$, $\rho$-selection) and the distance and energy constraints (Dist-C, $w$-C, Endurance) remain unchanged, as they do not depend on $y_v^o$. The binary and integer variables for this formulation are listed in Table~\ref{table:variables1_alt} (the continuous variables are the same as in Table~\ref{table:variables2} of the vertex-based formulation). The drone path constraints are modified as follows.
+In this alternative formulation, the location constraints (Loc-C$_1$ through Loc-C$_5$, $\rho$-selection) and the distance and energy constraints (Dist-C, $w$-C, Endurance) remain unchanged, as they do not depend on $y_v^o$. The binary and integer variables for this formulation are listed in Table~\ref{table:variables1_alt}; the continuous variables are the same as in Table~\ref{table:variables2} of the vertex-based formulation, except for the MTZ auxiliary variables $u_v^o$ which are not needed (subtour elimination is enforced via DFJ lazy cuts). The drone path constraints are modified as follows.
 
 \paragraph{Drone path constraints (edge-based).}
-The flow conservation (D$_{\text{path}}$-C$_2$) and MTZ subtour elimination (D$_{\text{path}}$-C$_7$) are kept unchanged. The depot departure and return constraints (D$_{\text{path}}$-C$_1$, D$_{\text{path}}$-C$_3$) also remain the same. The degree constraints, however, are relaxed: instead of coupling each traversal to a vertex-visitation variable, we simply bound the number of traversals incident to each vertex:
+The flow conservation (D$_{\text{path}}$-C$_2$) and the depot constraints (D$_{\text{path}}$-C$_1$, D$_{\text{path}}$-C$_3$) are kept unchanged.  The MTZ subtour elimination (D$_{\text{path}}$-C$_7$), which relies on auxiliary vertex-position variables $u_v^o$, is replaced by Dantzig--Fulkerson--Johnson (DFJ) exponential subtour elimination constraints separated dynamically via a lazy constraint callback during the branch-and-cut search. At each feasible integer incumbent, a breadth-first search from the depot identifies, for each operation $o$, the set of vertices reachable from the depot. If a proper subset $S\subsetneq\mathcal V'$ that does not contain the depot forms a connected component, the following cut is added to the model:
+%
+\begin{equation}
+    \sum_{u\in S,\,v\notin S} x_{uv}^o \geq 1,
+    \qquad \forall S\subsetneq\mathcal V': v_0\notin S,\; \forall o\in\mathcal O.
+    \label{eq:dfj_cut}
+\end{equation}
+%
+This constraint enforces that at least one edge must leave $S$, thereby preventing subtours that avoid the depot. The lazy callback avoids adding the full exponential family of DFJ constraints a priori and integrates naturally with the branch-and-cut framework of modern solvers such as Gurobi.
+
+The degree constraints are relaxed in this formulation: instead of coupling each traversal to a vertex-visitation variable, we simply bound the number of traversals incident to each vertex:
 
 \begin{align}
     \sum_{v'\in\mathcal V} x_{vv'}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_out}\tag{D$'_{\text{path}}$-C$_4$}\\

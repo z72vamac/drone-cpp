@@ -108,6 +108,30 @@ def test_edge_model_no_dp6():
 
 
 @pytest.mark.slow
+def test_edge_model_has_no_uvar():
+    """MTZ potentials u_v^o are removed; DFJ lazy cuts replace them."""
+    from conftest import small_instance
+    inst = small_instance()
+    model = EdgesModel(inst, verbose=False)
+    assert not hasattr(model, "_uvar"), \
+        "EdgesModel should not have _uvar (MTZ potentials)"
+    for c in model.model.getConstrs():
+        assert not c.ConstrName.startswith("DP7_"), \
+            f"DP7 (MTZ) constraint should not exist, found {c.ConstrName}"
+
+
+@pytest.mark.slow
+def test_edge_model_lazy_enabled():
+    """DFJ callback is active (no MTZ potentials needed for correctness)."""
+    from conftest import small_instance
+    inst = small_instance()
+    model = EdgesModel(inst, verbose=False)
+    sol = model.optimize(tl=15.0)
+    # LazyConstraints = 1 set in optimize()
+    assert model.model.Params.LazyConstraints == 1
+
+
+@pytest.mark.slow
 def test_edge_model_factory():
     from conftest import small_instance
     inst = small_instance()
@@ -137,12 +161,12 @@ def test_edge_model_small_solves():
 
 @pytest.mark.slow
 def test_edge_model_equivalence_with_rings():
-    """Both models should produce the same optimal value on a small instance.
+    """Both models produce the same optimal value on a small instance.
 
-    The edge model has a weaker LP relaxation (degree ≤ 1 instead of exact
-    vertex-visit equalities) and may need more time to prove optimality, but
-    the best integer solution of any feasible solution must match the vertex
-    model's proven optimum.
+    The edge model uses DFJ lazy subtour elimination (tighter LP relaxation
+    than the vertex model's MTZ) and relaxed degree constraints (≤ 1 instead
+    of exact vertex-visit equalities). Despite these structural differences,
+    the feasible integer solution sets are equivalent.
     """
     from conftest import small_instance
     from drone_cpp.models.mip_rings import RingsModel
