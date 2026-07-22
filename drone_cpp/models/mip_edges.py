@@ -175,6 +175,8 @@ class EdgesModel(RingsModel):
                 self.model.addConstr(inn == out, name=f"DP2_{v}_o{o}")
 
         # DP4', DP5': at-most-one traversal per vertex per operation
+        # (DP4' out ≤ 1 is implied by DP2 + DP5' for non-depot vertices,
+        #  but kept explicitly to provide the solver with tighter LP bounds.)
         for v in V:
             for o in Or:
                 out = gp.quicksum(self.x[(v, u, o)] for u in V if u != v
@@ -189,23 +191,17 @@ class EdgesModel(RingsModel):
         # a lazy-constraint callback in self.optimize().
         # ———————————————————————————————————————————————————
 
-        # DP9: idle operations must have no edges
+        # DP9: idle operations → no edges (tight big-M)
+        # M = |V'| + 1 (at most one per vertex + depot outgoing)
+        M_tight = len(self.verts) + 1
         for o in Or:
             self.model.addConstr(
                 gp.quicksum(self.x[k] for k in self.x if k[2] == o)
-                <= len(self.all_nodes) * len(self.all_nodes) * (1 - self.zeta[o]),
+                <= M_tight * (1 - self.zeta[o]),
                 name=f"DP9_o{o}")
 
-        # DP8: each intra edge traversed exactly once (unchanged)
-        for (u, v) in self._intra_rl:
-            e = gp.LinExpr()
-            for o in Or:
-                kf, kb = (u, v, o), (v, u, o)
-                if kf in self.x:
-                    e += self.x[kf]
-                if kb in self.x:
-                    e += self.x[kb]
-            self.model.addConstr(e == 1, name=f"DP8_{u}_{v}")
+        # DP8 is omitted — implied by EC1 + EC2a + EC3:
+        #   EC1: Σ_o y = 1,  EC2a: y ≥ x,  EC3: y ≤ x  ⇒  y = x  ⇒  Σ_o x = 1
 
         # EC1: every intra edge is covered by exactly one operation
         for (u, v) in self._intra_rl:
@@ -213,23 +209,18 @@ class EdgesModel(RingsModel):
                 gp.quicksum(self.y_edge[(u, v, o)] for o in Or) == 1,
                 name=f"EC1_{u}_{v}")
 
-        # EC2a, EC2b: coverage implies traversal in the corresponding direction
+        # EC2a: coverage implies forward traversal
+        # EC3:  coverage requires forward traversal
+        # (Intra edges are directed launch→retrieve, so the reverse direction
+        #  never exists in self.x.  EC2a + EC3 give y = x directly.)
         for (u, v) in self._intra_rl:
             for o in Or:
-                kf, kb = (u, v, o), (v, u, o)
+                kf = (u, v, o)
                 self.model.addConstr(
                     self.y_edge[(u, v, o)] >= self.x[kf],
                     name=f"EC2a_{u}_{v}_o{o}")
-                if kb in self.x:
-                    self.model.addConstr(
-                        self.y_edge[(u, v, o)] >= self.x[kb],
-                        name=f"EC2b_{u}_{v}_o{o}")
-                # EC3: if covered, must be traversed in at least one direction
-                rhs = gp.LinExpr(self.x[kf])
-                if kb in self.x:
-                    rhs += self.x[kb]
                 self.model.addConstr(
-                    self.y_edge[(u, v, o)] <= rhs,
+                    self.y_edge[(u, v, o)] <= self.x[kf],
                     name=f"EC3_{u}_{v}_o{o}")
 
     # ------------------------------------------------------------------

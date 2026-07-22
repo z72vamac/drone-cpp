@@ -548,14 +548,21 @@ The flow conservation (D$_{\text{path}}$-C$_2$) and the depot constraints (D$_{\
 %
 This constraint enforces that at least one edge must leave $S$, thereby preventing subtours that avoid the depot. The lazy callback avoids adding the full exponential family of DFJ constraints a priori and integrates naturally with the branch-and-cut framework of modern solvers such as Gurobi.
 
-The degree constraints are relaxed in this formulation: instead of coupling each traversal to a vertex-visitation variable, we simply bound the number of traversals incident to each vertex:
+The degree constraints are relaxed: instead of coupling each traversal to a vertex-visitation variable, we bound the number of traversals incident to each vertex:
 
 \begin{align}
     \sum_{v'\in\mathcal V} x_{vv'}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_out}\tag{D$'_{\text{path}}$-C$_4$}\\
     \sum_{v'\in\mathcal V} x_{v'v}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_in}\tag{D$'_{\text{path}}$-C$_5$}
 \end{align}
 
-Constraint~\eqref{eq:deg_out} (resp.~\eqref{eq:deg_in}) ensures that at most one edge leaves (resp. enters) each vertex in a given operation, which together with flow conservation guarantees that each vertex is visited at most once per operation. Since the set $\mathcal E^{int}$ is directed (each intra-ring edge is traversed only in the forward direction), the constraint D$_{\text{path}}$-C$_8$ (each intra edge traversed exactly once) remains unchanged.
+The constraint D$_{\text{path}}$-C$_8$ (each intra edge traversed exactly once) is omitted: it follows from EC$_1$ together with EC$_{2a}$ and EC$_3$, which enforce $y_{uv}^o = x_{uv}^o$ and $\sum_o y_{uv}^o = 1$, implying $\sum_o x_{uv}^o = 1$.
+
+For idle operations ($\zeta^o = 1$), all traversal variables are forced to zero via the constraint
+\begin{equation}
+    \sum_{(u,v)\in\mathcal E} x_{uv}^o \le (|\mathcal V'|+1)\,(1-\zeta^o), \qquad
+    \forall o\in\mathcal O,\label{eq:dp9}\tag{D$_{\text{path}}$-C$_9$}
+\end{equation}
+where the big-M coefficient $|\mathcal V'|+1$ is a tight upper bound on the number of edges in any feasible tour (at most one outgoing edge per vertex plus the depot departure).  This is significantly tighter than the original bound $|\mathcal V|^2$.
 
 \paragraph{Edge-coverage linking constraints.}
 For each intra-ring edge $(u,v)\in\mathcal E^{int}$ we introduce a binary variable $y_{uv}^o$ that takes value~1 if the edge is \emph{covered} (i.e.\ traversed in either direction) during operation~$o$. The following constraints link $y_{uv}^o$ with the traversal variables $x_{uv}^o$:
@@ -577,7 +584,7 @@ The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchange
 \end{align}
 
 \paragraph{Equivalence.}
-Because constraints~\eqref{eq:ec2a} and~\eqref{eq:ec3} give $y_{uv}^o = x_{uv}^o$, and D$_{\text{path}}$-C$_8$ forces $\sum_o x_{uv}^o = 1$, we have $y_{uv}^o = x_{uv}^o$ and thus $\sum_o y_{uv}^o = 1$ follows automatically. Moreover, each intra-ring edge in the vertex-based formulation contributes exactly one to $k^o$ via the two vertices it connects (each vertex has degree~1 in an active operation), whereas here it contributes directly via $y_{uv}^o$. The factor of~2 difference between $|\mathcal V'|$ and $|\mathcal E^{int}|$ in VI-1 is absorbed by the halved $k^o$ values. Consequently, the two formulations share the same set of feasible integer solutions and therefore the same optimal value. The edge-based formulation is implemented alongside the vertex-based one in our computational framework, allowing a direct comparison of their performance.
+Constraints~\eqref{eq:ec1}--\eqref{eq:ec3} enforce $\sum_o y_{uv}^o = 1$ and $y_{uv}^o = x_{uv}^o$, which gives $y_{uv}^o = x_{uv}^o$ and therefore $\sum_o x_{uv}^o = 1$ (the omitted D$_{\text{path}}$-C$_8$). Moreover, each intra-ring edge in the vertex-based formulation contributes exactly one to $k^o$ via the two vertices it connects (each vertex has degree~1 in an active operation), whereas here it contributes directly via $y_{uv}^o$. The factor of~2 difference between $|\mathcal V'|$ and $|\mathcal E^{int}|$ in VI-1 is absorbed by the halved $k^o$ values. Consequently, the two formulations share the same set of feasible integer solutions and therefore the same optimal value. The edge-based formulation is implemented alongside the vertex-based one in our computational framework, allowing a direct comparison of their performance.
 
 \section{Heuristic Solution Method}\label{sec:heuristic}
 

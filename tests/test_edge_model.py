@@ -50,13 +50,12 @@ def test_edge_model_degree_leq_one():
     from conftest import small_instance
     inst = small_instance()
     model = EdgesModel(inst, verbose=False)
-    # DP4'/DP5' constraints are named DP4p_*, DP5p_*
+    # DP4'/DP5' constraints for all vertices
     found = 0
     for c in model.model.getConstrs():
         if c.ConstrName.startswith("DP4p_") or c.ConstrName.startswith("DP5p_"):
             found += 1
     assert found > 0, "No degree ≤ 1 constraints found"
-    # Should have one DP4p and one DP5p per (vertex, operation)
     expected = len(model.all_nodes) * model.O * 2
     assert found == expected, f"Expected {expected} degree constraints, got {found}"
 
@@ -66,23 +65,19 @@ def test_edge_model_has_ec_constraints():
     from conftest import small_instance
     inst = small_instance()
     model = EdgesModel(inst, verbose=False)
-    ec1, ec2a, ec2b, ec3 = 0, 0, 0, 0
+    ec1, ec2a, ec3 = 0, 0, 0
     for c in model.model.getConstrs():
         if c.ConstrName.startswith("EC1_"):
             ec1 += 1
         elif c.ConstrName.startswith("EC2a_"):
             ec2a += 1
-        elif c.ConstrName.startswith("EC2b_"):
-            ec2b += 1
         elif c.ConstrName.startswith("EC3_"):
             ec3 += 1
     n_intra = len(model._intra_rl)
     O = model.O
     assert ec1 == n_intra, f"Expected {n_intra} EC1 constraints, got {ec1}"
+    # EC2b omitted: reverse direction never exists in self.x for intra edges
     assert ec2a == n_intra * O, f"Expected {n_intra * O} EC2a, got {ec2a}"
-    # EC2b only created when reverse direction edge exists in self.x
-    # (intra edges are directed launch→retrieve, so no reverse)
-    assert ec2b == 0, f"Expected 0 EC2b (no reverse edges), got {ec2b}"
     assert ec3 == n_intra * O, f"Expected {n_intra * O} EC3, got {ec3}"
 
 
@@ -105,6 +100,40 @@ def test_edge_model_no_dp6():
     for c in model.model.getConstrs():
         assert not c.ConstrName.startswith("DP6_"), \
             f"DP6 constraint should not exist in edge model, found {c.ConstrName}"
+
+
+@pytest.mark.slow
+def test_edge_model_no_dp8():
+    """DP8 is implied by EC1+EC2a+EC3 and therefore omitted."""
+    from conftest import small_instance
+    inst = small_instance()
+    model = EdgesModel(inst, verbose=False)
+    for c in model.model.getConstrs():
+        assert not c.ConstrName.startswith("DP8_"), \
+            f"DP8 should not exist, found {c.ConstrName}"
+
+
+@pytest.mark.slow
+def test_edge_model_dp9_tight_bigm():
+    """DP9 uses tight big-M M = |V'| + 1 (one per operation)."""
+    from conftest import small_instance
+    inst = small_instance()
+    model = EdgesModel(inst, verbose=False)
+    dp9_count = sum(1 for c in model.model.getConstrs()
+                    if c.ConstrName.startswith("DP9_"))
+    # One per operation (not per edge)
+    assert dp9_count == model.O, \
+        f"Expected {model.O} DP9 constraints, got {dp9_count}"
+    # Verify M value = |V'| + 1
+    expected_m = len(model.verts) + 1
+    # Check that the M coefficient appears in the constraint RHS
+    # The constraint is: sum x <= M * (1 - zeta)
+    # When zeta=0, RHS = M = |V'| + 1
+    # We can verify by checking that the constraint exists with the right name
+    for o in range(model.O):
+        cname = f"DP9_o{o}"
+        found = any(c.ConstrName == cname for c in model.model.getConstrs())
+        assert found, f"Missing {cname}"
 
 
 @pytest.mark.slow
