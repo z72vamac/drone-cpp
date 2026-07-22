@@ -266,23 +266,62 @@ We then define the decision variables representing the problem, which are summar
 \input{tables/table_continuous_variables}
 
 \subsection{Location constraints}
-To set the coordinates for each point $P_v$ of the graph, we define two family of variables. The first family of binary variables, $\mu_v^s$, decides which segment $s$ of the polygonal chain is selected for the vertex $v$. Once a segment $s$ is chosen, the second family of continuous variables, $\gamma_v\in [0,1]$, represents $P_v$ as a linear combination of the endpoints of the segment $s$. Putting all together, the following constraints determine the location of $P_v$:
-\begin{align*}
-    P_v&=\sum_{t\in\mathcal T_r} \sum_{s\in\mathcal S_t}\mu_{v}^s\left[(1-\gamma_v)Q^s+\gamma_v Q^{s+1}\right],&\forall v=(r,i)\in\mathcal V',\label{eq:location_1}\tag{$Loc-C_1$}\\
-    \sum_{s\in\mathcal S_t}\mu_{v}^s&=\alpha_{t},&\forall v=(r,i)\in\mathcal V', \forall t \in \mathcal T_r,\label{eq:location_2}\tag{$Loc-C_2$}\\
-    \sum_{t\in\mathcal T_r} \alpha_{t}&=1,&\forall r \in\mathcal R.\label{eq:location_3}\tag{$Loc-C_3$}
-\end{align*}
-Constraints \eqref{eq:location_2} describe the binary variable $\alpha_{p}$, that attains value one if we select the polygonal shape $p$ for the region $r$. Constraints \eqref{eq:location_3} ensure that a polygonal shape must be selected for each region $r$.
 
-Once points are represented by means of variables $\mu$ and $\gamma$, we can order these points by defining a continuous variable $\lambda_v\in[0,S_p]$ that gives the global parameterisation of the vertex $v$ in the polygonal chain $p$ assigned to region $r$. The following constraints set the values of these variables:
-\begin{align*}
-    \lambda_{v}&=\sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}(s-1)\mu_{v}^s + \gamma_v,&\quad\forall v=(r,i)\in\mathcal V',\label{eq:location_4}\tag{$Loc-C_4$}\\
-    \lambda_{v}&=0,&\quad\forall v=(r,1), (r,2):r\in\mathcal R,\label{eq:location_5}\tag{$Loc-C_5$}\\
-    \lambda_{v}&\leq \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \CV{\mathcal E_{RL}^{int}\cup \mathcal E_{RL}^S\cup \mathcal E_{RL}^T},\label{eq:location_6}\tag{$Loc-C_6$}\\
-    \lambda_{v}&= \lambda_{v'},&\quad\forall v,v'\in\mathcal V':(v,v')\in \CV{\mathcal E_{LR}^{int}\cup\mathcal E_{LR}^S\cup \mathcal E_{LR}^T,}\label{eq:location_7}\tag{$Loc-C_7$}\\
-    \lambda_{v}&=\sum_{t\in\mathcal T_r}\alpha_{t}S_t,&\quad\forall v=(r,2R+1), (r, 2R+2):r\in\mathcal R.\label{eq:location_8}\tag{$Loc-C_8$}
-\end{align*}
-Constraints \eqref{eq:location_4} define the values of $\lambda_v$ in relation with the selected segment $s$ and the fraction of this segment that is traversed. Constraints \eqref{eq:location_5} ensure that the starting points of the polygonal chain correspond to the vertices $(r,1)$ and $(r, 2)$. Constraints \eqref{eq:location_6} ensure that the sequence of points located on the polygonal chain respects the ordering imposed by the direction of traversal, i.e.\ a vertex assigned to a later segment must have a larger parameter $\lambda$ than one assigned to an earlier segment. Constraints \eqref{eq:location_7} enforce that consecutive pairs (launch--retrieve points) share the same parameter $\lambda$, meaning they coincide in space and the drone can enter and exit the chain at the same position. Finally, constraints \eqref{eq:location_8} fix $\lambda$ to the total length $S_t$ of the selected chain $t$ for the end vertices $(r,2R+1)$ and $(r,2R+2)$, ensuring the polygonal chain is fully traversed.
+For each vertex $v=(r,i)\in\mathcal V'$ we define its spatial coordinates $P_v=(P_v^x,P_v^y,P_v^z)\in\mathbb R^3$. Let $\mu_v^{ts}$ be a binary variable that is one if vertex $v$ is placed on segment $s$ of chain $t$, and let $\gamma_v\in[0,1]$ denote the relative position within that segment. The product $\gamma_v\cdot\mu_v^{ts}$ is linearized via the auxiliary continuous variable $\eta_v^{ts}$, constrained by standard Fortet inequalities ($0\le\eta_v^{ts}\le\mu_v^{ts}$, $\gamma_v-(1-\mu_v^{ts})\le\eta_v^{ts}\le\gamma_v$). The coordinates of $v$ are then given by:
+
+\begin{align}
+    P_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+          \bigl[ \mu_v^{ts} Q^s + \eta_v^{ts} (Q^{s+1}-Q^s) \bigr],
+          && \forall v=(r,i)\in\mathcal V', \label{eq:location_1}\tag{Loc-C$_1$}\\[2mm]
+    P_v^z &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+            \mu_v^{ts}\,h_t,
+          && \forall v=(r,i)\in\mathcal V', \label{eq:location_1z}\tag{Loc-C$_1^z$}
+\end{align}
+
+\noindent where $h_t$ is the altitude of chain $t$. Constraint~\eqref{eq:location_1z} defines the vertical coordinate independently, since each chain $t$ is associated with a single flight altitude. The segment assignment and chain selection are enforced by:
+
+\begin{align}
+    \sum_{s\in\mathcal S_t} \mu_v^{ts} &= \alpha_t,
+          && \forall v=(r,i)\in\mathcal V',\; \forall t\in\mathcal T_r,
+          \label{eq:location_2}\tag{Loc-C$_2$}\\
+    \sum_{t\in\mathcal T_r} \alpha_t &= 1,
+          && \forall r\in\mathcal R,
+          \label{eq:location_3}\tag{Loc-C$_3$}
+\end{align}
+
+\noindent where $\alpha_t$ is a binary variable that is one if chain $t$ is selected. The parametrization of vertices along the chain is defined via the continuous variable $\lambda_v\in[0,S_t]$:
+
+\begin{align}
+    \lambda_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+                (s-1)\mu_v^{ts} + \gamma_v,
+          && \forall v\in\mathcal V',
+          \label{eq:location_4}\tag{Loc-C$_4$}\\
+    \lambda_v &= 0,
+          && \forall v=(r,1),(r,2),
+          \label{eq:location_5}\tag{Loc-C$_5$}
+\end{align}
+
+\noindent with the following fixing at the chain endpoints (start vertices $(r,1),(r,2)$ and end vertices $(r,2R+1),(r,2R+2)$):
+
+\begin{align}
+    \mu_v^{t0} &= \alpha_t,
+          && \forall v=(r,1),(r,2),\; \forall t\in\mathcal T_r,
+          \label{eq:location_5b}\tag{Loc-C$_{5b}$}\\
+    \lambda_u &\le \lambda_v,
+          && \forall (u,v)\in\mathcal E_{RL}^{int}\cup\mathcal E_{RL}^{S}\cup\mathcal E_{RL}^{T},
+          \label{eq:location_6}\tag{Loc-C$_6$}\\
+    \lambda_u &= \lambda_v,
+          && \forall (u,v)\in\mathcal E_{LR}^{int}\cup\mathcal E_{LR}^{S}\cup\mathcal E_{LR}^{T},
+          \label{eq:location_7}\tag{Loc-C$_7$}\\
+    \lambda_v &= \sum_{t\in\mathcal T_r} S_t\,\alpha_t,
+          && \forall v=(r,2R+1),(r,2R+2),
+          \label{eq:location_8}\tag{Loc-C$_8$}\\
+    \mu_v^{t,S_t-1} &= \alpha_t,
+          && \forall v=(r,2R+1),(r,2R+2),\; \forall t\in\mathcal T_r.
+          \label{eq:location_8b}\tag{Loc-C$_{8b}$}
+\end{align}
+
+Constraint~\eqref{eq:location_4} defines $\lambda_v$ as the cumulative length from the chain start to the point, expressed as the index of the selected segment (minus one) plus the offset $\gamma_v$ within that segment. Constraint~\eqref{eq:location_5} fixes the parametrization at zero for the start vertices. Constraint~\eqref{eq:location_5b} fixes the first segment for start vertices. Constraints~\eqref{eq:location_6} and~\eqref{eq:location_7} enforce the traversal order and the coincidence of launch--retrieve pairs, respectively. Constraint~\eqref{eq:location_8} sets $\lambda$ to the total chain length for the end vertices, and~\eqref{eq:location_8b} fixes the last segment for those vertices.
 
 \begin{figure}
     \centering
@@ -335,189 +374,157 @@ k^o\geq 1-\zeta^o,\quad\forall o\in\mathcal O.
 
 
 \subsection{Distance constraints}
-This subsection is devoted to computing the distance between any pair of vertices of the graph. The reader may note that these distances must be modelled using continuous variables, since the location of the points is not fixed in the polygonal chains representing the regions.
 
-Firstly, we compute the distance between two points that belong to the same polygonal chain. For every $v, v'\in\mathcal V'$ such that $(v,v')\in\mathcal E_{RL}^{int}$, the distance inside the polygonal chain is represented by the following expressions:
-\begin{scriptsize}
-    
-\begin{equation*}
- d_{vv'}^{ss'}= \left \{\begin{array}{lr}
- (\gamma_{v'}-\gamma_v) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}], \\
-(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} L(s'')+\gamma_{v'} L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}], 
- \end{array} \right.
-\end{equation*}
-\end{scriptsize}
+Since vertex positions are decision variables, all distances must be expressed through continuous variables. We first consider pairs of vertices belonging to the same region, then pairs in different regions.
 
-where $L(s)=\|Q^{s+1}-Q^s||_2$ denotes the length of the segment $s$. The reader may note that for the cases where $v>_{lex} v'$, we can set $d_{vv'}^{t}=d_{v'v}^{t}$ to obtain the same value for the symmetric case. 
-The expression above can be rewritten by means of $\mu$ variables as follows:
-\begin{scriptsize}
-    
-\begin{equation*}\label{eq:distance_1}\tag{$Dist-C_1$}
-    d_{vv'}^{ss'}=\left \{\begin{array}{lr} \mu_v^s\mu_{v'}^{s}\left[(\gamma_{v'}-\gamma_v)L(s)\right]+\mu_v^s\mu_{v'}^{s'}\left[(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} L(s'')+\gamma_{v'} L(s')\right],& \mbox{if } v <_{lex} v',\\
-    d_{v'v}^{ss'}, & \mbox{if } v >_{lex} v'.\end{array}\right. 
-\end{equation*}
-\end{scriptsize}
-\\
-Hence, since each vertex is only assigned to a single segment by \eqref{eq:location_2} and \eqref{eq:location_3}, the distance between $v$ and $v'$ is given by:
-\begin{equation*}\label{eq:distance_2}\tag{$Dist-C_2$}    
-d_{vv'}=\sum_{t\in\mathcal T_r}\sum_{s,s'\in\mathcal S_t}d_{vv'}^{ss'},\quad \forall v=(r,i), v'=(r,i')\in\mathcal V': (v,v')\in\mathcal E_{RL}^{int}.
-\end{equation*}
+\paragraph{Intra-region distances.}
+For each region $r$, the polygonal chain $t$ is composed of segments $\mathcal S_t$ of known lengths $L(s)=\|Q^{s+1}-Q^s\|_2$. Rather than introducing bilinear products $\mu_v^s\mu_{v'}^{s'}$, we define an auxiliary continuous variable $dfs_v$ that accumulates the distance from the start of the chain to vertex $v$:
 
-Secondly, we compute the distance between vertices of different regions. In that case, we assume that drone movement is decomposed into two parts: horizontal movement in the plane $OXY$ and vertical movement on the axis $OZ$. We denote by $d_{vv'}^{xy}$ and $d_{vv'}^z$ the continuous variables that represent the horizontal and vertical distances travelled by the drone to go from $P_v$ to $P_{v'}$, respectively. Thus, the constraints that compute the total distance are the following:
-\begin{align*}
-    d_{vv'}&=d_{vv'}^{xy}+d_{vv'}^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_3}\tag{$Dist-C_3$}\\
-    d_{vv'}^{xy}&\geq\|(P_v^x,P_v^y,0)-(P_{v'}^x,P_{v'}^y,0)\|_2,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_4}\tag{$Dist-C_4$}\\
-    d_{vv'}^z&\geq P_v^z - P_{v'}^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext},\label{eq:distance_5}\tag{$Dist-C_5$}\\
-    d_{vv'}^z&\geq P_{v'}^z - P_v^z,&\quad\forall v,v'\in\mathcal V:(v,v')\in\mathcal E^{ext}.\label{eq:distance_6}\tag{$Dist-C_6$}
-\end{align*}
-Here, we denote the coordinates of $P_v$ as $P_v=(P_v^x,P_v^y,P_v^z)$. Constraint \eqref{eq:distance_3} computes the total distance of the horizontal and vertical components. The horizontal distance, $d^{xy}$, is computed as the Euclidean distance by means of second-order cone constraints \eqref{eq:distance_4}. The vertical distance, $d^z$, is calculated by taken the absolute value of the difference of the third components that is linearised by using the constraints \eqref{eq:distance_5} and \eqref{eq:distance_6}.
-\begin{comment}
+\begin{align}
+    dfs_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+            \bigl[ \operatorname{cum\_before}(s)\,\mu_v^{ts}
+            + L(s)\,\eta_v^{ts} \bigr],
+            && \forall v\in\mathcal V',
+            \label{eq:dfs}\tag{DFS}\\[2mm]
+    d_{uv} &= dfs_v - dfs_u,
+            && \forall (u,v)\in\mathcal E_{RL}^{int},
+            \label{eq:dist_int_rl}\tag{Dist-C$_1$}\\
+    d_{uv} &= 0,
+            && \forall (u,v)\in\mathcal E_{LR}^{int},
+            \label{eq:dist_int_lr}\tag{Dist-C$_2$}
+\end{align}
 
-$\forall v=(r,i), v'=(r,i+1), p \in \mathcal P_r, s ,s' \in \mathcal S_p$
-\begin{equation}
- d_{vv'} = \sum_{s, s' \in \mathcal P_r} \beta_{vv'}^{ss'}  d_{vv'}^{ss'}
- \end{equation}
-\begin{equation*}\label{eq:distance_1}\tag{$Dist-C_1$}
-    d_{vv'}=\sum_{p\in\mathcal P_r}\sum_{s,s'\in\mathcal S_p}\left[\beta_{v}^{ss}(\gamma_{v'}-\gamma_v)\mathcal L(s)+\beta_{v}^{ss'}\left[(1-\gamma_v)\mathcal L(s)+\sum_{s''\in[s+1,s'-1]}\mathcal L(s'')+\gamma_{v'}\mathcal L(s')\right]\right]
-\end{equation*}
-where $\beta_{v}^{ss'}=\mu_{v}^s\mu_{v'}^{s'}$, $v=(r,i)$, $v'=(r,i+1)$.
+\noindent where $\operatorname{cum\_before}(s)=\sum_{s'<s}L(s')$ is the length of the chain up to the start of segment $s$, and $\eta_v^{ts}=\gamma_v\cdot\mu_v^{ts}$ is the same linearization variable used in~\eqref{eq:location_1}. For RL edges the distance is simply the difference of cumulative distances from the chain start; for LR edges the two vertices coincide ($\lambda_u=\lambda_v$ from~\eqref{eq:location_7}) so the distance is zero.
 
+\paragraph{Inter-region distances.}
+For vertices in different regions we decompose the movement into horizontal and vertical components. Let $d_{vv'}^{xy}$ and $d_{vv'}^z$ be continuous variables representing the horizontal and vertical distances, respectively. The total distance is then:
 
-\begin{align*}
-    \beta_{vv'}^{ss'} &\leq \mu_{v}^s,&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p,\label{eq:beta_1}\tag{$\beta-C_1$}\\
-    \beta_{vv'}^{ss'} &\leq \mu_{v'}^{s'},&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p,\label{eq:beta_2}\tag{$\beta-C_2$}\\
-    \beta_{vv'}^{ss'} &\geq \mu_{v}^s + \mu_{v'}^{s'} - 1 ,&\quad\forall v=(r,i),v'=(r,i+1)\in\mathcal V,\forall p\in\mathcal P_r,\forall s,s'\in\mathcal S_p\label{eq:beta_3}\tag{$\beta-C_3$},
-\end{align*}
-\end{comment}
+\begin{align}
+    d_{vv'} &= d_{vv'}^{xy} + d_{vv'}^z,
+            && \forall (v,v')\in\mathcal E^{ext},
+            \label{eq:dist_ext_sum}\tag{Dist-C$_3$}\\
+    d_{vv'}^{xy} &\ge \bigl\| (P_v^x,P_v^y) - (P_{v'}^x,P_{v'}^y) \bigr\|_2,
+            && \forall (v,v')\in\mathcal E^{ext},
+            \label{eq:dist_ext_xy}\tag{Dist-C$_4$}\\
+    d_{vv'}^z &\ge P_v^z - P_{v'}^z,
+            && \forall (v,v')\in\mathcal E^{ext},
+            \label{eq:dist_ext_z1}\tag{Dist-C$_5$}\\
+    d_{vv'}^z &\ge P_{v'}^z - P_v^z,
+            && \forall (v,v')\in\mathcal E^{ext}.
+            \label{eq:dist_ext_z2}\tag{Dist-C$_6$}
+\end{align}
+
+Constraint~\eqref{eq:dist_ext_xy} is a second-order cone constraint that computes the Euclidean horizontal distance. Constraints~\eqref{eq:dist_ext_z1}--\eqref{eq:dist_ext_z2} give the absolute vertical difference via a standard linearization.
+
 
 \subsection{Consumption constraints}
-In our model, we assume that the drone has a limited endurance, denoted by $W^{\max}$, to perform each operation. The consumption is computed by using the drag force formula, whose general expression is:
-$$
-w = \frac{1}{2}Ac\rho\nu d,
-$$
-where $A$ and $c$ denote the front surface and the drag coefficient of the drone, respectively; $\rho$ represents the air density; $\nu$, the speed of the drone (dependent on the height), and $d$, the distance travelled.
-Similarly to what has been done for expressing the distance between vertices, we first distinguish the case in which they belong to the same region to the one in which they belong to different regions.
 
-\subsubsection{Consumption between vertices of the same region}
+The energy consumed by the drone is modelled using the drag formula $w = \tfrac12 A c\,\rho\,\nu\,d$, where $A$ is the frontal area, $c$ the drag coefficient, $\rho$ the air density, $\nu$ the drone speed, and $d$ the travelled distance. We write $E^{xy}=E^{z}=\tfrac12 cA$ for brevity. As with distances, we treat intra-region and inter-region pairs separately.
 
-If the two vertices belong to the same region we can express the drone energy consumption as follows:
-% \begin{equation*}
-%     w_{vv'}=E^{xy}\left(\sum_{p\in \mathcal P_h}\rho_{p}\alpha_p\right)\sum_{s,s'\in\mathcal S_p}|\vec{\nu}_{vv'}^{ss'd}|d_{vv'}^{ss'},\quad\forall v, v'\in\mathcal V:(v,v')\in \mathcal A^{\text{int}}\label{eq:consumption_1}\tag{$Consumption-C_1$},\\
-% \end{equation*}    
+\paragraph{Intra-region energy.}
+Following the same approach as for distances, we introduce an auxiliary continuous variable $efs_v$ that accumulates the energy from the start of the chain to vertex $v$:
 
-If $v <_{lex} v'$
-\begin{tiny}
-\begin{equation*}
- w_{vv'}^{t}= \left \{\begin{array}{ll}
- E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v'}-\gamma_v) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}],\quad s\in\mathcal S_t, \\
-E^{xy}\rho_s|\vec{\nu}_{s}^d|(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|\gamma_{v'} L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}], \quad s,s'\in\mathcal S_t:s\neq s'
- \end{array} \right.
-\end{equation*}
-\end{tiny}
+\begin{align}
+    efs_v &= \sum_{t\in\mathcal T_r}\sum_{s\in\mathcal S_t}
+            C_{ts}\bigl[ \operatorname{cum\_before}(s)\,\mu_v^{ts}
+            + L(s)\,\eta_v^{ts} \bigr],
+            && \forall v\in\mathcal V',
+            \label{eq:efs}\tag{EFS}\\[2mm]
+    w_{uv} &= efs_v - efs_u,
+            && \forall (u,v)\in\mathcal E_{RL}^{int},
+            \label{eq:ener_int_rl}\tag{$w$-C$_1$}\\
+    w_{uv} &= 0,
+            && \forall (u,v)\in\mathcal E_{LR}^{int},
+            \label{eq:ener_int_lr}\tag{$w$-C$_2$}
+\end{align}
 
-\newpage
-If $v >_{lex} v'$
+\noindent where $C_{ts}=E^{xy}\rho_t\,\nu_{ts}^d$ is the energy per unit distance on segment $s$ of chain $t$, computed as a constant during pre-processing. The drone speed $\nu_{ts}^d$ is obtained from $\vec\nu_{ts}^d = \nu_0\frac{Q^{s+1}-Q^s}{\|Q^{s+1}-Q^s\|} - \vec\nu_{h}^w$ for forward traversal (and the opposite sign for backward traversal).
 
-\begin{tiny}
-\begin{equation*}
- w_{vv'}^{t}= \left \{\begin{array}{ll}
- E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v}-\gamma_{v'}) L(s),   & \mbox{if } P_v, P_{v'}\in [Q^s,Q^{s+1}],\quad s\in\mathcal S_t, \\
-E^{xy}\rho_s|\vec{\nu}_{s}^d|\gamma_v L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|(1-\gamma_{v'}) L(s'),  & \mbox{if } P_v\in[Q^s,Q^{s+1}]\mbox{ and } P_{v'} \in [Q^{s'}, Q^{s'+1}],  \quad s,s'\in\mathcal S_t:s\neq s'
- \end{array} \right.
-\end{equation*}
-\end{tiny}
+\paragraph{Inter-region energy.}
+For vertices in different regions, the movement involves both horizontal and vertical components at possibly different altitudes. Let $\varphi_{rr'}$ be a binary variable that is one if the drone departs from region $r$ at the altitude selected for that region; let $\psi_{rr'}$ be one if the altitude of $r$ is lower than that of $r'$. The energy consumption is then:
 
-where $E^{xy}=\frac{1}{2}cA$ and $\vec{\nu}_{s}^d$ is the drone speed to traverse segment $s$ of the polygonal chain. This speed is computed beforehand as:
+\begin{align}
+    w_{vv'} &=
+    \varphi_{rr'}\Bigl( E^{xy}d_{vv'}^{xy}\sum_{t\in\mathcal T_r}\alpha_t\rho_t|\vec\nu_{rr't}^{d}|
+    + E^{z}\psi_{rr'}d_{vv'}^{z}\,\tfrac12\!\sum_{\tau\in\{r,r'\}}\!\sum_{t\in\mathcal T_\tau}\alpha_t\rho_t\,\nu^{z}\Bigr) \nonumber\\
+    &\quad + (1-\varphi_{rr'})\Bigl( E^{xy}d_{vv'}^{xy}\sum_{t\in\mathcal T_{r'}}\alpha_t\rho_t|\vec\nu_{rr't}^{d}|
+    + E^{z}(1-\psi_{rr'})d_{vv'}^{z}\,\tfrac12\!\sum_{\tau\in\{r,r'\}}\!\sum_{t\in\mathcal T_\tau}\alpha_t\rho_t\,\nu^{z}\Bigr),
+    \label{eq:ener_ext}\tag{$w$-C$_3$}
+\end{align}
 
-\begin{equation*}
-    \vec{\nu}_{s}^d = \left \{\begin{array}{lr}
-    \nu_0 \frac{Q^{s+1}-Q^{s}}{\|Q^{s+1}-Q^{s}\|} - \vec{\nu_{h}^w}, & \mbox{if } v<_{lex} v',\\
-    \nu_0 \frac{Q^{s}-Q^{s+1}}{\|Q^{s}-Q^{s+1}\|} - \vec{\nu_{h}^w}, & \mbox{if } v>_{lex} v'.\end{array}\right.
-\end{equation*}
+\noindent for all $(v,v')\in\mathcal E^{ext}$ with $v=(r,i), v'=(r',i')$. All bilinear products involving $\varphi_{rr'}$, $\psi_{rr'}$, and $\alpha_t$ are linearized explicitly using standard Fortet constraints.
 
-The expression above can be rewritten by means of the $\mu$ variables:
+\paragraph{Depot energy.}
+For movements to and from the depot $v_0$, we use a simplified model with constant sea-level air density $\rho_0$:
 
-\begin{tiny}
-\begin{equation*}\label{eq:consumption_1}\tag{$w-C_1$}
-    w_{vv'}^{t}=\left\{\begin{array}{lr}
-    \mu_v^s\mu_{v'}^{s}E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v'}-\gamma_v) L(s)+\mu_v^s\mu_{v'}^{s'}\left[E^{xy}\rho_s|\vec{\nu}_{s}^d|(1-\gamma_v) L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|\gamma_{v'} L(s')\right],\quad s\in\mathcal S_t & \mbox{if } v <_{lex} v',\\
-    \mu_v^s\mu_{v'}^{s}E^{xy} \rho_s|\vec{\nu}_{s}^d|(\gamma_{v}-\gamma_{v'}) L(s)+\mu_v^s\mu_{v'}^{s'}\left[E^{xy}\rho_s|\vec{\nu}_{s}^d|\gamma_v L(s)+\displaystyle\sum_{s''=s+1}^{s'-1} E^{xy}\rho_{s''}|\vec{\nu}_{s''}^d|L(s'')+E^{xy}\rho_{s'}|\vec{\nu}_{s'}^d|(1-\gamma_{v'}) L(s')\right],\quad s,s'\in\mathcal S_t:s\neq s' & \mbox{if } v >_{lex} v',
-    \end{array}\right.
-\end{equation*}
-\end{tiny}
+\begin{align}
+    d_{v_0v} &= d_{v}^{xy} + d_v^z,
+              && \forall v\in\mathcal V',
+              \label{eq:dep_dist}\tag{Dep-C$_1$}\\
+    d_{v}^{xy} &\ge \bigl\| (P_v^x-d_x,\;P_v^y-d_y) \bigr\|_2,
+              && \forall v\in\mathcal V',
+              \label{eq:dep_soc}\tag{Dep-C$_2$}\\
+    d_v^z &\ge |P_v^z|,
+              && \forall v\in\mathcal V',
+              \label{eq:dep_z}\tag{Dep-C$_3$}\\
+    w_{v_0v} &= E^{xy}\rho_0\,\nu^{xy}\,d^{xy} + \tfrac12 E^{z}\rho_0\,\nu^{z}\,d^z,
+              && \forall v\in\mathcal V',
+              \label{eq:dep_ener_up}\tag{Dep-C$_4$}\\
+    w_{vv_0} &= E^{xy}\rho_0\,\nu^{xy}\,d^{xy},
+              && \forall v\in\mathcal V'.
+              \label{eq:dep_ener_down}\tag{Dep-C$_5$}
+\end{align}
 
-Since each vertex is only assigned to a single segment, the drone energy consumption between vertex $v$ and vertex $v'$ is given by:
+\noindent The ascent energy~\eqref{eq:dep_ener_up} includes both horizontal and vertical work; the descent~\eqref{eq:dep_ener_down} assumes the drone recovers no energy (vertical contribution is zero).
 
-\begin{equation*}\label{eq:consumption_2}\tag{$w-C_2$}
-w_{vv'}=\sum_{t\in\mathcal T_r}\sum_{s, s'\in\mathcal S_t}w_{vv'}^{t},\quad \forall v=(r,i), v'=(r,i')\in\mathcal V': (v,v')\in\mathcal E^{int}.
-\end{equation*}
+\subsection{Endurance constraint}
 
-\subsubsection{Consumption between vertices from different regions}
+The bilinear product $x_{uv}^o\,w_{uv}$ in the endurance constraint (and $x_{uv}^o\,d_{uv}$ in the objective) is linearized via auxiliary continuous variables $\ell_{uv}^o$ with the following big-M formulation:
 
-If the two vertices belong to different regions, we need to introduce the binary variable $\varphi_{rr'}$ that takes the value of one if the height selected to move the drone from region $r$ to region $r^'$ is the one adopted to visit region $r$. Based on that, the energy consumption also depends on the relation between the height selected to visit region $r$ (denoted by $h_r$) and the one selected to visit region $r^'$ (denoted by $h_{r^'}$). For this reason we need also to define the binary variable $\psi_{rr'}$ that takes value one if $h_r < h_{r^'}$. Thus, the drone energy consumption can be expressed as follows:
+\begin{align}
+    \ell_{uv}^o &\le x_{uv}^o\cdot M,
+                && \forall (u,v)\in\mathcal E,\;\forall o\in\mathcal O,
+                \label{eq:end_lin1}\tag{End-Lin$_1$}\\
+    \ell_{uv}^o &\le w_{uv},
+                && \forall (u,v)\in\mathcal E,\;\forall o\in\mathcal O,
+                \label{eq:end_lin2}\tag{End-Lin$_2$}\\
+    \ell_{uv}^o &\ge w_{uv} - (1-x_{uv}^o)M,
+                && \forall (u,v)\in\mathcal E,\;\forall o\in\mathcal O,
+                \label{eq:end_lin3}\tag{End-Lin$_3$}\\
+    \ell_{uv}^o &\ge 0,
+                && \forall (u,v)\in\mathcal E,\;\forall o\in\mathcal O,
+                \label{eq:end_lin4}\tag{End-Lin$_4$}
+\end{align}
 
+\noindent where $M$ is a sufficiently large constant. The endurance of each operation is then enforced by:
 
-\begin{footnotesize}
-\begin{align*} \label{eq:consumption_3}\tag{$w-C_3$}   
-    w_{vv'}=&
-    %\varphi_{rr'}^1\left(E^{xy}d_{vv'}^{xy}\rho_{0}\nu_{rr'0}^{xy}+E^z\left(\sum_{p\in\mathcal P_r}\alpha_{p} h_p-h_0\right)\frac{1}{2}\left(\rho_0+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right)+\\
-     \varphi_{rr'}\left(E^{xy}d_{vv'}^{xy}\sum_{t\in\mathcal T_r}\alpha_t\rho_t|\vec\nu_{rr't}^{d}|+E^z\psi_{rr'}d_{vv'}^z\frac{1}{2}\left(\sum_{t\in\mathcal T_{r}}\alpha_{t}\rho_{t}+\sum_{t'\in\mathcal T_{r'}}\alpha_{t'}\rho_{t'}\right)\nu^z\right)+\\
-    +& (1-\varphi_{rr'})\left(E^{xy}d_{vv'}^{xy}\sum_{t'\in \mathcal T_{r'}}\alpha_t\rho_t|\vec\nu_{rr't'}^{d}|+E^z(1-\psi_{rr'})d_{vv'}^z\frac{1}{2}\left(\sum_{t\in\mathcal T_{r}}\alpha_{t}\rho_{t}+\sum_{t'\in\mathcal T_{r'}}\alpha_{t'}\rho_{t'}\right)\nu^z\right)\\
-    %+&\varphi_{rr'}^4\left(E^{xy}d_{vv'}^{xy}\rho_{H}\nu_{rr'H}^{xy}+E^z\left(h_H-\sum_{p\in\mathcal P_r}\alpha_{p} h_p\right)\frac{1}{2}\left(\rho_H+\sum_{p'\in\mathcal P_{r'}}\alpha_{p'}\rho_{p'}\right)\nu^z\right).\\
-\end{align*}
-\end{footnotesize}
-%$$
-%P_v^z=\sum_{h\in\mathcal %H_r}\sum_{p\in\mathcal P_h} h\alpha_p
-%$$
+\begin{equation}
+    \sum_{(u,v)\in\mathcal E} \ell_{uv}^o \le W^{\max},
+    \qquad \forall o\in\mathcal O.
+    \label{eq:endurance}\tag{Endurance}
+\end{equation}
 
-%$$
-%\varphi_{rr'} = 1 \mbox{ if we select the height of } r
-%$$
+\subsection{Objective function}
 
-%$$
-%\psi_{rr'} = 1 \mbox{ if } h_r < h_{r'}.
-%$$
+The objective is to minimize the total distance travelled across all operations, equivalently the total flight time since the drone speed is constant per segment. Using the same linearization as above,
 
+\begin{equation}
+    \min\; W = \sum_{(u,v)\in\mathcal E}\sum_{o\in\mathcal O} \ell_{uv}^o,
+    \label{eq:objective}\tag{Objective}
+\end{equation}
 
-where $E^{xy}=\frac{1}{2}cA$, $E^{z}=\frac{1}{2}cA$, are constants representing the characteristics of the drone, and $\nu^z$ defines the module of the vertical speed of the drone.\\
-
-Based on the previous expressions, we can introduce the last set of constraints, imposing that the drone energy consumption associated with each operation $o$ is not greater than the its maximum endurance $W^{\max}$:
-
-%\begin{equation*}\label{eq:endurance}\tag{$Endurance$}
-%\sum_{(v,v^') \in \mathcal A} w_{vv'}x_{vv'}^o \leq W^{\max} %&\quad \forall o \in \mathcal O
-%\end{equation*}
-
-\begin{equation*}\label{eq:endurance}\tag{$Endurance$}
-\sum_{(v,v^') \in \mathcal E} w_{vv'}x_{vv'}^o \leq W^{\max} \quad \forall o \in \mathcal O
-\end{equation*}
-
-
-\begin{comment}
-\subsubsection{Amorosi assumptions}
-\tiny
-\begin{align*}    
-    w^0_{vv'}&=w_{vv'}^{0xy}+w_{vv'}^{0z},&\quad v=(0,0),\forall v'\in\mathcal V\label{eq:consumption_1}\tag{$Consumption-C_1$},\\
-    w_{vv'}^{0xy}&=E^{xy}\rho_0d_{vv'}^{xy}=w_{v'v}^{xy},&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_2}\tag{$Consumption-C_2$},\\
-    w_{vv'}^{0z}&=\frac{1}{2} E^z  \left(\rho_0 + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z,&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_4}\tag{$Consumption-C_4$},\\
-    w_{v'v}^{0z}&=0,&\quad v=(0,0), \forall v'\in\mathcal V\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
-    w_{vv'}&=\min\left\{E^{xy}\rho_0d_{vv'}^{xy}+\frac{1}{2}E^z\left(\rho_0+\sum_{p'\in\mathcal P_{r'}}\rho_{p'}\alpha_{p'}\right)\left(\sum_{p'\in\mathcal P_{r'}} h_{p'}\alpha_{p'}-h_0\right), E^{xy}\min\left\{\sum_{p\in \mathcal P_r}\rho_{p}\alpha_p, \sum_{p'\in \mathcal P_{r'}}\rho_{p'}\alpha_{p'}\right\}d_{vv'}^{xy}+\frac{1}{2} E^z  \left(\sum_{p\in \mathcal P_r}\rho_{h}\alpha_p + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z\right\}\\
-    % w_{vv'}^{z}&=\frac{1}{2} E^z  \left(\sum_{p\in \mathcal P_r}\rho_{h}\alpha_p + \sum_{p'\in \mathcal P_{r'}}\rho_{h'}\alpha_{p'}\right ) d_{vv'}^z,&\quad\forall v=(r, i),v'=(r',i')\in\mathcal V\setminus\{(0,0)\}\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
-    W^o&=\sum_{v,v'}x_{vv'}^ow_{vv'},&\quad\forall v,v'\in\mathcal V\label{eq:consumption_5}\tag{$Consumption-C_5$},\\
-    W^o&\leq endurance,&\quad\forall v,v'\in\mathcal V\label{eq:consumption_6}\tag{$Consumption-C_6$}.
-\end{align*}
-\end{comment}
+\noindent where $\ell_{uv}^o$ now linearizes $x_{uv}^o\cdot d_{uv}$ (the same variables can be reused because a single $\ell_{uv}^o$ per edge--operation pair suffices, and each $\ell_{uv}^o$ is constrained by both $d_{uv}$ and $w_{uv}$ via the big-M formulation above).
 \subsection{Formulation}
 The complete formulation of the CPP follows:
 \begin{mini*}[4]
-        {}{W=\sum_{v, v'\in\mathcal V}\sum_{o\in\mathcal O} d_{vv'}x_{vv'}^o}
+        {}{W=\sum_{(u,v)\in\mathcal E}\sum_{o\in\mathcal O} \ell_{uv}^o}
         {}{}\label{form:formulation}\tag{Formulation}
         \addConstraint{\eqref{eq:drone_path_1}-\eqref{eq:drone_path_7b}}{}
         \addConstraint{\eqref{eq:mon}, \eqref{eq:k},\eqref{eq:VI-1}-\eqref{eq:VI-2}}{}
-        \addConstraint{\eqref{eq:location_1}-\eqref{eq:location_7}}{}
-        \addConstraint{\eqref{eq:distance_1}-\eqref{eq:distance_6}}{}
-        %\addConstraint{\eqref{eq:beta_1}-\eqref{eq:beta_3}}{}
-        \addConstraint{\eqref{eq:consumption_1}-\eqref{eq:consumption_3}}
-        \addConstraint{\eqref{eq:endurance}}
+        \addConstraint{\eqref{eq:location_1}-\eqref{eq:location_8b}}{}
+        \addConstraint{\eqref{eq:dfs},\eqref{eq:dist_int_rl}-\eqref{eq:dist_ext_z2}}{}
+        \addConstraint{\eqref{eq:efs},\eqref{eq:ener_int_rl}-\eqref{eq:ener_ext},\eqref{eq:dep_dist}-\eqref{eq:dep_ener_down}}{}
+        \addConstraint{\eqref{eq:end_lin1}-\eqref{eq:endurance}}{}
 \end{mini*}
 
 

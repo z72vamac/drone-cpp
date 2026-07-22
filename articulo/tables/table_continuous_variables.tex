@@ -1,22 +1,6 @@
-% \begin{table}[h!]
-% \begin{tabular}{llll}
-% \textbf{Name} & \textbf{Domain} & \textbf{Range} & \textbf{Description}                               \\
-% $P_v$         & $\mathcal V'$   & $\mathbb R^3$  & Coordinates of the point associated to vertex $v$. \\
-% $\gamma_v$    & $\mathcal V$    & $[0,1]$        & Parameterization of vertex $v$ in a segment of the polygonal chain                     \\
-% $\lambda_v$            &    $\mathcal V$             &   $[0, S_p]$             &  Global parameterization of vertex $v$ in the polygonal chain $p$\\
-% $ d_{vv'}^{ss'}$ & $\mathcal E^{int} \times \mathcal S^p $  & $\mathbb R^+$ & distance between vertices inside the polygonal chain $p$\\
-% $d_{vv'}$ & $\mathcal E$ & $\mathbb R^+$ & distance between vertex $v$ and vertex $v^'$\\
-% $d_{vv'}^{xy}$ & $\mathcal E^{ext}$ & $\mathbb R^+$  & horizontal distance between vertex $v$ and vertex $v^'$\\
-% $d_{vv'}^{z}$ & $\mathcal E^{ext}$ & $\mathbb R^+$  & vertical distance between vertex $v$ and vertex $v^'$\\
-% $w_{vv'}^{ss'}$ & $\mathcal E^{int} \times \mathcal S^p $ & $\mathbb R^+$ & drone energy consumption between vertices inside the polygonal chain $p$\\
-% $w_{vv'}$ & $\mathcal E$  & $\mathbb R^+$ & drone energy consumption between vertex $v$ and vertex $v^'$\\
-% \end{tabular}
-% \label{table:variables2}
-% \end{table}
-
 \begin{table}[h!]
 \centering
-\caption{Table of Variables}
+\caption{Continuous variables}
 \label{table:variables2}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{llll}
@@ -24,15 +8,18 @@
 \textbf{Name} & \textbf{Domain} & \textbf{Range} & \textbf{Description} \\
 \midrule
 $P_v$ & $\mathcal V'$ & $\mathbb{R}^3$ & Coordinates of the point associated to vertex $v$. \\
-$\gamma_v$ & $\mathcal V'$ & $[0,1]$ & Parameterization of vertex $v$ in the segment selected to locate it.  \\
-$\lambda_v$ & $\mathcal V'$ & $[0, S_t]:t\in\mathcal T_r$ & Global parameterization of vertex $v$ in the polygonal chain selected to visit the region $r$. \\
-$d_{vv'}^{t}$ & $\mathcal E^{int} \times \mathcal T_r$ & $\mathbb{R}^+$ & Distance between vertices inside the polygonal chain $t$ selected to visit the region $r$. \\
-$u_v^o$ & $\mathcal V' \times \mathcal O$ & $[1, |\mathcal V'|]$ & Position of vertex $v$ in the tour of operation $o$ (MTZ subtour elimination). \\
+$\gamma_v$ & $\mathcal V'$ & $[0,1]$ & Position of vertex $v$ within its selected segment. \\
+$\lambda_v$ & $\mathcal V'$ & $[0, S_t]:t\in\mathcal T_r$ & Global parametrization of vertex $v$ on the selected chain. \\
+$\eta_v^{ts}$ & $\mathcal V' \times \{(t,s):t\in\mathcal T_r,s\in\mathcal S_t\}$ & $[0,1]$ & Linearization of $\gamma_v\cdot\mu_v^{ts}$. \\
+$dfs_v$ & $\mathcal V'$ & $[0, L_{\max}]$ & Cumulative distance from the start of the chain to vertex $v$. \\
+$efs_v$ & $\mathcal V'$ & $[0, W_{\max}]$ & Cumulative energy from the start of the chain to vertex $v$. \\
 $d_{vv'}$ & $\mathcal E$ & $\mathbb{R}^+$ & Distance between vertex $v$ and vertex $v'$. \\
-$d_{vv'}^{xy}$ & $\mathcal E^{ext}$ & $\mathbb{R}^+$ & Horizontal distance between vertex $v$ and vertex $v'$. \\
-$d_{vv'}^{z}$ & $\mathcal E^{ext}$ & $\mathbb{R}^+$ & Vertical distance between vertex $v$ and vertex $v'$. \\
-$w_{vv'}^{t}$ & $\mathcal E^{int} \times \mathcal T_r$ & $\mathbb{R}^+$ & Drone energy consumption between vertices inside the polygonal chain $t$ selected to visit the region $r$. \\
-$w_{vv'}$ & $\mathcal E$ & $\mathbb{R}^+$ & Drone energy consumption between vertex $v$ and vertex $v'$. \\
+$d_{vv'}^{xy}$ & $\mathcal E^{ext}$ & $\mathbb{R}^+$ & Horizontal distance between $v$ and $v'$. \\
+$d_{vv'}^{z}$ & $\mathcal E^{ext}$ & $\mathbb{R}^+$ & Vertical distance between $v$ and $v'$. \\
+$w_{vv'}$ & $\mathcal E$ & $\mathbb{R}^+$ & Energy consumption between $v$ and $v'$. \\
+$u_v^o$ & $\mathcal V' \times \mathcal O$ & $[1, |\mathcal V'|]$ & Position of $v$ in the tour of operation $o$ (MTZ). \\
+$\ell_{uv}^o$ & $\mathcal E \times \mathcal O$ & $[0, \infty)$ & Linearization of $x_{uv}^o\cdot d_{uv}$ (objective) and $x_{uv}^o\cdot w_{uv}$ (endurance). \\
+$\rho_r$ & $\mathcal R$ & $[0,\rho(0)]$ & Air density at the height selected for region $r$. \\
 \bottomrule
 \end{tabular}}
 \end{table}
