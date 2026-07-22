@@ -533,7 +533,7 @@ The complete formulation of the CPP follows:
 
 \input{tables/table_binary_variables_new}
 
-The formulation presented above treats each vertex in $\mathcal V'$ individually: location variables $\mu_v^s$, $\gamma_v$ are defined per vertex, and path variables $x_{vv'}^o$ are defined per pair of vertices. When the number of regions grows, the combinatorial explosion of vertex pairs---especially in $\mathcal E^{ext}$---can make the model difficult to solve. An alternative representation can be obtained by replacing the per-vertex visitation variables $y_v^o$ with per-edge coverage variables $y_{uv}^o$ defined on the set of intra-ring edges $\mathcal E^{int}$, following a perspective akin to the rural postman problem.
+The formulation presented above treats each vertex in $\mathcal V'$ individually: location variables $\mu_v^s$, $\gamma_v$ are defined per vertex, and path variables $x_{vv'}^o$ are defined per pair of vertices. When the number of regions grows, the combinatorial explosion of vertex pairs---especially in $\mathcal E^{ext}$---can make the model difficult to solve. An alternative representation can be obtained by eliminating the per-vertex visitation variables $y_v^o$ entirely and using the traversal variables $x_{uv}^o$ directly to count covered edges, following a perspective akin to the rural postman problem.
 
 In this alternative formulation, the location constraints (Loc-C$_1$ through Loc-C$_5$, $\rho$-selection) and the distance and energy constraints (Dist-C, $w$-C, Endurance) remain unchanged, as they do not depend on $y_v^o$. The binary and integer variables for this formulation are listed in Table~\ref{table:variables1_alt}; the continuous variables are the same as in Table~\ref{table:variables2} of the vertex-based formulation, except for the MTZ auxiliary variables $u_v^o$ which are not needed (subtour elimination is enforced via DFJ lazy cuts). The drone path constraints are modified as follows.
 
@@ -555,7 +555,7 @@ The degree constraints are relaxed: instead of coupling each traversal to a vert
     \sum_{v'\in\mathcal V} x_{v'v}^o &\le 1, &&\forall v\in\mathcal V,\;\forall o\in\mathcal O,\label{eq:deg_in}\tag{D$'_{\text{path}}$-C$_5$}
 \end{align}
 
-The constraint D$_{\text{path}}$-C$_8$ (each intra edge traversed exactly once) is omitted: it follows from EC$_1$ together with EC$_{2a}$ and EC$_3$, which enforce $y_{uv}^o = x_{uv}^o$ and $\sum_o y_{uv}^o = 1$, implying $\sum_o x_{uv}^o = 1$.
+The constraint D$_{\text{path}}$-C$_8$ (each intra edge traversed exactly once) is kept unchanged.  Since intra-ring edges are directed (only the forward direction exists), the traversal variable $x_{uv}^o$ already serves as a coverage indicator for the edge $(u,v)$, and a separate coverage variable is unnecessary.
 
 For idle operations ($\zeta^o = 1$), all traversal variables are forced to zero via the constraint
 \begin{equation}
@@ -564,27 +564,19 @@ For idle operations ($\zeta^o = 1$), all traversal variables are forced to zero 
 \end{equation}
 where the big-M coefficient $|\mathcal V'|+1$ is a tight upper bound on the number of edges in any feasible tour (at most one outgoing edge per vertex plus the depot departure).  This is significantly tighter than the original bound $|\mathcal V|^2$.
 
-\paragraph{Edge-coverage linking constraints.}
-For each intra-ring edge $(u,v)\in\mathcal E^{int}$ we introduce a binary variable $y_{uv}^o$ that takes value~1 if the edge is \emph{covered} (i.e.\ traversed in either direction) during operation~$o$. The following constraints link $y_{uv}^o$ with the traversal variables $x_{uv}^o$:
-
-\begin{align}
-    \sum_{o\in\mathcal O} y_{uv}^o &= 1, &&\forall (u,v)\in\mathcal E^{int},\label{eq:ec1}\tag{EC$_1$}\\
-    y_{uv}^o &\ge x_{uv}^o, &&\forall (u,v)\in\mathcal E^{int},\;\forall o\in\mathcal O,\label{eq:ec2a}\tag{EC$_{2a}$}\\
-    y_{uv}^o &\le x_{uv}^o, &&\forall (u,v)\in\mathcal E^{int},\;\forall o\in\mathcal O.\label{eq:ec3}\tag{EC$_3$}
-\end{align}
-
-Constraint~\eqref{eq:ec1} ensures that each required edge is assigned to exactly one operation. Constraints~\eqref{eq:ec2a} and~\eqref{eq:ec3} together enforce $y_{uv}^o = x_{uv}^o$---the edge is covered if and only if it is traversed (recall that intra-ring edges are directed, so the reverse direction $x_{vu}^o$ does not exist). The edge-coverage variables $y_{uv}^o$ replace the vertex-visitation variables $y_v^o$ in the valid inequalities.
+\paragraph{Adapted valid inequalities.}
+The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchanged. The $k$-counting constraint and VI-1 are updated to use the edge-based variables:
 
 \paragraph{Adapted valid inequalities.}
 The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchanged. The $k$-counting constraint and VI-1 are updated to use the edge-based variables:
 
 \begin{align}
-    k^o &= \sum_{(u,v)\in\mathcal E^{int}} y_{uv}^o, &&\forall o\in\mathcal O,\label{eq:k_edge}\tag{$k$-C$'$}\\
+    k^o &= \sum_{(u,v)\in\mathcal E^{int}} x_{uv}^o, &&\forall o\in\mathcal O,\label{eq:k_edge}\tag{$k$-C$'$}\\
     \sum_{o'=1}^{o-1} k^{o'} &\ge |\mathcal E^{int}|\,\zeta^o, &&\forall o\in\mathcal O.\label{eq:vi1_edge}\tag{VI-1$'$}
 \end{align}
 
 \paragraph{Equivalence.}
-Constraints~\eqref{eq:ec1}--\eqref{eq:ec3} enforce $\sum_o y_{uv}^o = 1$ and $y_{uv}^o = x_{uv}^o$, which gives $y_{uv}^o = x_{uv}^o$ and therefore $\sum_o x_{uv}^o = 1$ (the omitted D$_{\text{path}}$-C$_8$). Moreover, each intra-ring edge in the vertex-based formulation contributes exactly one to $k^o$ via the two vertices it connects (each vertex has degree~1 in an active operation), whereas here it contributes directly via $y_{uv}^o$. The factor of~2 difference between $|\mathcal V'|$ and $|\mathcal E^{int}|$ in VI-1 is absorbed by the halved $k^o$ values. Consequently, the two formulations share the same set of feasible integer solutions and therefore the same optimal value. The edge-based formulation is implemented alongside the vertex-based one in our computational framework, allowing a direct comparison of their performance.
+The traversal variables $x_{uv}^o$ replace the vertex-visitation variables $y_v^o$ in the valid inequalities: $k^o$ counts edges traversed rather than vertices visited.  In the vertex-based formulation, the degree constraints DP$_4$--DP$_5$ couple each vertex visit to two incident edges, so each intra-ring edge contributes exactly one to $k^o$ via its two endpoint vertices.  Here it contributes directly via $x_{uv}^o$, and D$_{\text{path}}$-C$_8$ ensures each edge is traversed exactly once.  The two formulations share the same set of feasible integer solutions and therefore the same optimal value.  The edge-based formulation is implemented alongside the vertex-based one in our computational framework, allowing a direct comparison of their performance.
 
 \section{Heuristic Solution Method}\label{sec:heuristic}
 

@@ -27,7 +27,7 @@
 $\mu_{v}^s$ & $\mathcal V' \times \{s\in\mathcal S_t:t\in\mathcal T_r\}$ & $\{0,1\}$ & 1, if vertex $v=(r,i)$ is located at the segment $s\in \mathcal S_t$, where $t\in\mathcal T_r$. \\
 $\alpha_{t}$ & $\{t\in\mathcal T_r:r\in\mathcal R\}$ & $\{0, 1\}$ & 1, if polygonal chain $t$ is selected. \\
 $x_{vv'}^o$ & $\mathcal E \times \mathcal O$ & $\{0, 1\}$ & 1, if the drone traverses the edge $(v,v')$ in operation $o$. \\
-$y_{uv}^o$ & $\mathcal{E}^{int} \times \mathcal O$ & $\{0, 1\}$ & 1, if the intra-ring edge $(u,v)$ is covered in operation $o$. \\
+% $y_{uv}^o$ removed: intra edges are directed, so traversal x doubles as coverage
 $\zeta^o$ & $\mathcal O$ & $\{0, 1\}$ & 1, if all vertices are visited before starting operation $o$. \\
 $k^o$ & $\mathcal O$ & $[1, 2,\ldots, |\mathcal E^{int}|]$ & number of intra-ring edges covered in operation $o$. \\
 $\varphi_{rr'}$ & $\{(r,r')\in\mathcal R \times \mathcal R:r\neq r'\}$ & $\{0, 1\}$ & 1, if the drone moves from region $r$ to region $r'$ at the height selected to visit region $r$. \\

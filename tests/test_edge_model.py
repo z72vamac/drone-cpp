@@ -34,15 +34,13 @@ def test_edge_model_has_no_y_vertex_vars():
 
 
 @pytest.mark.slow
-def test_edge_model_has_y_edge_vars():
+def test_edge_model_has_no_y_edge():
+    """No separate edge-coverage variable exists (traversal x is used directly)."""
     from conftest import small_instance
     inst = small_instance()
     model = EdgesModel(inst, verbose=False)
-    for (u, v) in model._intra_rl:
-        for o in range(model.O):
-            assert (u, v, o) in model.y_edge, \
-                f"Missing y_edge[({u},{v}),o{o}]"
-    assert len(model.y_edge) == len(model._intra_rl) * model.O
+    assert not hasattr(model, "y_edge"), \
+        "EdgesModel should not have y_edge (redundant with x)"
 
 
 @pytest.mark.slow
@@ -61,24 +59,27 @@ def test_edge_model_degree_leq_one():
 
 
 @pytest.mark.slow
-def test_edge_model_has_ec_constraints():
+def test_edge_model_has_dp8():
+    """DP8 replaces EC1 (each intra edge traversed exactly once)."""
     from conftest import small_instance
     inst = small_instance()
     model = EdgesModel(inst, verbose=False)
-    ec1, ec2a, ec3 = 0, 0, 0
+    dp8_count = sum(1 for c in model.model.getConstrs()
+                    if c.ConstrName.startswith("DP8_"))
+    expected = len(model._intra_rl)
+    assert dp8_count == expected, \
+        f"Expected {expected} DP8 constraints, got {dp8_count}"
+
+
+@pytest.mark.slow
+def test_edge_model_has_no_ec():
+    """EC constraints (EC1/EC2a/EC3) are removed (y_edge eliminated)."""
+    from conftest import small_instance
+    inst = small_instance()
+    model = EdgesModel(inst, verbose=False)
     for c in model.model.getConstrs():
-        if c.ConstrName.startswith("EC1_"):
-            ec1 += 1
-        elif c.ConstrName.startswith("EC2a_"):
-            ec2a += 1
-        elif c.ConstrName.startswith("EC3_"):
-            ec3 += 1
-    n_intra = len(model._intra_rl)
-    O = model.O
-    assert ec1 == n_intra, f"Expected {n_intra} EC1 constraints, got {ec1}"
-    # EC2b omitted: reverse direction never exists in self.x for intra edges
-    assert ec2a == n_intra * O, f"Expected {n_intra * O} EC2a, got {ec2a}"
-    assert ec3 == n_intra * O, f"Expected {n_intra * O} EC3, got {ec3}"
+        assert not c.ConstrName.startswith("EC"), \
+            f"EC constraint should not exist, found {c.ConstrName}"
 
 
 @pytest.mark.slow
@@ -100,17 +101,6 @@ def test_edge_model_no_dp6():
     for c in model.model.getConstrs():
         assert not c.ConstrName.startswith("DP6_"), \
             f"DP6 constraint should not exist in edge model, found {c.ConstrName}"
-
-
-@pytest.mark.slow
-def test_edge_model_no_dp8():
-    """DP8 is implied by EC1+EC2a+EC3 and therefore omitted."""
-    from conftest import small_instance
-    inst = small_instance()
-    model = EdgesModel(inst, verbose=False)
-    for c in model.model.getConstrs():
-        assert not c.ConstrName.startswith("DP8_"), \
-            f"DP8 should not exist, found {c.ConstrName}"
 
 
 @pytest.mark.slow

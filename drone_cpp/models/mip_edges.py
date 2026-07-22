@@ -1,11 +1,11 @@
 """Edge-based MIQP formulation with DFJ lazy subtour elimination.
 
-Replaces per-vertex visitation variables y_v^o with per-edge coverage
-variables y_{uv}^o defined on intra-ring edges only.  Degree constraints
-are relaxed to at-most-one (<= 1).  Instead of MTZ vertex-potential
-constraints, subtour elimination is enforced via Dantzig–Fulkerson–Johnson
-(DFJ) cut constraints separated lazily during branch-and-bound through a
-MIPSOL callback that detects disconnected components per operation.
+Counts edge traversals directly (no separate vertex-visitation or
+edge-coverage variables).  Degree constraints are relaxed to at-most-one
+(<= 1).  Instead of MTZ vertex-potential constraints, subtour elimination
+is enforced via Dantzig–Fulkerson–Johnson (DFJ) cut constraints separated
+lazily during branch-and-bound through a MIPSOL callback that detects
+disconnected components per operation.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ class EdgesModel(RingsModel):
                 "constraints": self.model.NumConstrs}
 
     # ------------------------------------------------------------------
-    # Variables: remove y_v^o, add y_{uv}^o for intra edges
+    # Variables
     # ------------------------------------------------------------------
     def _create_variables(self):
         # --- mu, gamma, alpha, lambd (identical to RingsModel) ----------
@@ -102,13 +102,6 @@ class EdgesModel(RingsModel):
             for o in range(self.O):
                 self.x[(u, v, o)] = self.model.addVar(
                     vtype=GRB.BINARY, name=f"x_{u}_{v}_o{o}")
-
-        # --- y_edge: coverage per intra edge (replaces y_v^o) ----------
-        self.y_edge: Dict[Tuple[Vertex, Vertex, int], gp.Var] = {}
-        for (u, v) in self._intra_rl:
-            for o in range(self.O):
-                self.y_edge[(u, v, o)] = self.model.addVar(
-                    vtype=GRB.BINARY, name=f"ye_{u}_{v}_o{o}")
 
         # --- zeta, k ----------------------------------------------------
         for o in range(self.O):
@@ -200,28 +193,13 @@ class EdgesModel(RingsModel):
                 <= M_tight * (1 - self.zeta[o]),
                 name=f"DP9_o{o}")
 
-        # DP8 is omitted — implied by EC1 + EC2a + EC3:
-        #   EC1: Σ_o y = 1,  EC2a: y ≥ x,  EC3: y ≤ x  ⇒  y = x  ⇒  Σ_o x = 1
-
-        # EC1: every intra edge is covered by exactly one operation
+        # DP8: each intra edge traversed exactly once (unchanged — since
+        # intra edges are directed, there is no need for a separate coverage
+        # variable; the traversal variable plays that role directly.)
         for (u, v) in self._intra_rl:
             self.model.addConstr(
-                gp.quicksum(self.y_edge[(u, v, o)] for o in Or) == 1,
-                name=f"EC1_{u}_{v}")
-
-        # EC2a: coverage implies forward traversal
-        # EC3:  coverage requires forward traversal
-        # (Intra edges are directed launch→retrieve, so the reverse direction
-        #  never exists in self.x.  EC2a + EC3 give y = x directly.)
-        for (u, v) in self._intra_rl:
-            for o in Or:
-                kf = (u, v, o)
-                self.model.addConstr(
-                    self.y_edge[(u, v, o)] >= self.x[kf],
-                    name=f"EC2a_{u}_{v}_o{o}")
-                self.model.addConstr(
-                    self.y_edge[(u, v, o)] <= self.x[kf],
-                    name=f"EC3_{u}_{v}_o{o}")
+                gp.quicksum(self.x[(u, v, o)] for o in Or) == 1,
+                name=f"DP8_{u}_{v}")
 
     # ------------------------------------------------------------------
     # Valid inequalities: k counts edges, VI-1 uses |E_int|
@@ -235,11 +213,11 @@ class EdgesModel(RingsModel):
             self.model.addConstr(self.zeta[o] <= self.zeta[o + 1],
                                  name=f"Mon_o{o}")
 
-        # kC: k^o = number of intra edges covered in operation o
+        # kC: k^o = number of intra edges traversed in operation o
         for o in Or:
             self.model.addConstr(
                 self.k[o] == gp.quicksum(
-                    self.y_edge[(u, v, o)] for (u, v) in self._intra_rl),
+                    self.x[(u, v, o)] for (u, v) in self._intra_rl),
                 name=f"kC_o{o}")
 
         # VI-1: cumulative coverage must equal |E_int| before zeta activates
@@ -323,20 +301,12 @@ class EdgesModel(RingsModel):
             if used:
                 edges = ops[o].edges
 
-                # Count covered intra edges and set y_edge starts
-                edge_count = 0
-                for (u, v) in self._intra_rl:
-                    covered = any(
-                        (eu == u and ev == v) or (eu == v and ev == u)
-                        for (eu, ev) in edges
-                    )
-                    for oo in range(self.O):
-                        yk = (u, v, oo)
-                        if yk in self.y_edge:
-                            self.y_edge[yk].Start = 1.0 if (covered and oo == o) else 0.0
-                    if covered:
-                        edge_count += 1
-
+                # Count intra edges traversed in this operation
+                edge_count = sum(
+                    1 for (u, v) in self._intra_rl
+                    if any((eu == u and ev == v) or (eu == v and ev == u)
+                           for (eu, ev) in edges)
+                )
                 self.k[o].Start = edge_count
 
                 for u, v in edges:
@@ -345,10 +315,6 @@ class EdgesModel(RingsModel):
                         self.x[xk].Start = 1.0
             else:
                 self.k[o].Start = 0
-                for (u, v) in self._intra_rl:
-                    yk = (u, v, o)
-                    if yk in self.y_edge:
-                        self.y_edge[yk].Start = 0.0
                 for v in self.verts:
                     xk_fwd = (dep_v, v, o)
                     if xk_fwd in self.x:
