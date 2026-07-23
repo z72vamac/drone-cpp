@@ -343,12 +343,8 @@ class EdgesModel(RingsModel):
 
         def _separate_subtours(model, where):
             if where == GRB.Callback.MIPSOL:
-                # Track first incumbent
-                if first_info[0] is None:
-                    first_info[0] = model.cbGet(GRB.Callback.MIPSOL_OBJ)
-                    first_info[1] = model.cbGet(GRB.Callback.RUNTIME)
-
                 # DFJ cut separation per active operation
+                cuts_added = False
                 for o in range(self.O):
                     zeta_val = model.cbGetSolution(zeta_dict[o])
                     if zeta_val > 0.5:
@@ -391,6 +387,12 @@ class EdgesModel(RingsModel):
                                 if v not in component and (u, v, o) in x_dict:
                                     cut += x_dict[(u, v, o)]
                         model.cbLazy(cut >= 1)
+                        cuts_added = True
+
+                # Track first feasible incumbent (no cuts added)
+                if not cuts_added and first_info[0] is None:
+                    first_info[0] = model.cbGet(GRB.Callback.MIPSOL_OBJ)
+                    first_info[1] = model.cbGet(GRB.Callback.RUNTIME)
 
         self.model.optimize(callback=_separate_subtours)
         st = self.model.Status
