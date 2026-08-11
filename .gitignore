@@ -1,0 +1,82 @@
+# Python (compiled/cache only, .py sources are always tracked)
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Gurobi license
+gurobi.lic
+
+# Plots and outputs (regenerables)
+*.png
+!articulo/pictures/*.png
+!IFORS/**/*.png
+sweep_results/*.png
+
+# PDF (regenerables)
+*.pdf
+!articulo/*.pdf
+
+# Solution files (regenerables)
+*.sol
+sweep_results/end_*_sol.json
+cone_solution.json
+solution_high.json
+solution_limited.json
+heuristic_solution.json
+
+# Comparison experiment outputs (only the regenerable dumps; CSV results are tracked)
+compare_results/*
+compare_results_edges/*
+!compare_results/*.csv
+!compare_results_edges/*.csv
+!compare_results/endurance_levels.json
+
+# Logs
+*.log
+
+# LaTeX build artifacts
+*.aux
+*.out
+*.synctex.gz
+*.synctex(busy)
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.spl
+
+# Editor / OS
+.opencode/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Temp animation frames
+anim_frames*/
+
+# Scratch solution dumps (no extension)
+v2_3regions_v2
+v*_*
+heuristic_solution.png
+
+# NEVER ignore source code or result data files
+!*.py
+!*.csv
