@@ -1,0 +1,89 @@
+{
+  "objective_value": 183.20096642819317,
+  "chain_selection": {
+    "0": 0
+  },
+  "vertex_positions": {
+    "0,2,LAUNCH": {
+      "x": 41.961358355132695,
+      "y": 37.79770195654669,
+      "z": 30.0
+    },
+    "0,3,RETRIEVE": {
+      "x": 41.961358355132695,
+      "y": 37.79770195654669,
+      "z": 30.0
+    },
+    "0,0,LAUNCH": {
+      "x": 44.79075642793873,
+      "y": 38.4833695914629,
+      "z": 30.0
+    },
+    "0,1,RETRIEVE": {
+      "x": 44.79075642793873,
+      "y": 38.4833695914629,
+      "z": 30.0
+    }
+  },
+  "vertex_lambdas": {
+    "0,2,LAUNCH": 0.0,
+    "0,3,RETRIEVE": 0.0,
+    "0,0,LAUNCH": 5.511820178143471,
+    "0,1,RETRIEVE": 5.511820178143471
+  },
+  "vertex_rings": {
+    "0,2,LAUNCH": 1,
+    "0,3,RETRIEVE": 1,
+    "0,0,LAUNCH": 0,
+    "0,1,RETRIEVE": 0
+  },
+  "operations": [
+    [
+      {
+        "r": -1,
+        "i": 0,
+        "t": "START",
+        "r2": 0,
+        "i2": 2,
+        "t2": "LAUNCH"
+      },
+      {
+        "r": 0,
+        "i": 2,
+        "t": "LAUNCH",
+        "r2": 0,
+        "i2": 3,
+        "t2": "RETRIEVE"
+      },
+      {
+        "r": 0,
+        "i": 3,
+        "t": "RETRIEVE",
+        "r2": 0,
+        "i2": 0,
+        "t2": "LAUNCH"
+      },
+      {
+        "r": 0,
+        "i": 0,
+        "t": "LAUNCH",
+        "r2": 0,
+        "i2": 1,
+        "t2": "RETRIEVE"
+      },
+      {
+        "r": 0,
+        "i": 1,
+        "t": "RETRIEVE",
+        "r2": -1,
+        "i2": 0,
+        "t2": "START"
+      }
+    ]
+  ],
+  "solve_time": null,
+  "mip_gap": null,
+  "status": null,
+  "first_incumbent_obj": null,
+  "first_incumbent_time": null
+}
