@@ -1,0 +1,768 @@
+﻿This is pdfTeX, Version 3.141592653-2.6-1.40.27 (MiKTeX 25.4) (preloaded format=pdflatex.fmt)
+ restricted \write18 enabled.
+entering extended mode
+(main.tex
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-09-02>
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/elsarticle\elsarticle.c
+ls
+Document Class: elsarticle 2025/01/11, 3.4c: Elsevier Ltd
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\fontenc.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/l3kernel\expl3.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/l3backend\l3backend-pdf
+tex.def))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/l3packages/xparse\xpars
+e.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/etoolbox\etoolbox.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\size12.clo))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphicx.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics\keyval.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics\graphics.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics\trig.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\graphics.c
+fg)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics-def\pdftex.def
+))) (main.spl)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/natbib\natbib.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/lineno\lineno.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/kvoptions\kvoptions.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/ltxcmds\ltxcmds.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/kvsetkeys\kvsetkeys.sty
+))) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/subfig\subfig.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption3.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/caption\caption-elsarti
+cle.sto))))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/float\float.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/breqn\breqn.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsmath.sty
+For additional information on amsmath, use the `?' option.
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amstext.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsgen.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsbsy.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsmath\amsopn.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/breqn\flexisym.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/breqn\cmbase.sym)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/breqn\mathstyle.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/tools\calc.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/xcolor\xcolor.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics-cfg\color.cfg)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/graphics\mathcolor.ltx)
+) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\inputenc.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\fontenc.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amsfonts.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\amssymb.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/mathtools\mathtools.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/mathtools\mhsetup.sty))
+ (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/booktabs\booktabs.sty)
+ (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/optidef\optidef.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/environ\environ.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/trimspaces\trimspaces.s
+ty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/xifthen\xifthen.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/base\ifthen.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/ifmtarg\ifmtarg.sty)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pstricks\pstricks.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/iftex\iftex.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/xkeyval\pst-xkey.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/xkeyval\xkeyval.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/xkeyval\xkeyval.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/xkeyval\xkvutils.tex)
+)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-fp.tex
+`pst-fp' v0.06, 2020/11/20 (hv))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgffor.st
+y
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfrcs.st
+y
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfutil
+-common.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfutil
+-latex.def)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfrcs.
+code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf\pgf.revision.tex)
+))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/utilities\pgfkeys.s
+ty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfkeys
+.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgfkeys
+libraryfiltered.code.tex)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/math\pgfmath.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmath.code
+.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathutil.
+code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathparse
+r.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.basic.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.trigonometric.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.random.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.comparison.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.base.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.round.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.misc.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfunct
+ions.integerarithmetics.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathcalc.
+code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfmathfloat
+.code.tex)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/utilities\pgffor.
+code.tex))
+`PSTricks' v3.22  <2025/06/11> (tvz,hv)
+--- We are running latex or xelatex ---
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks.con
+)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks-col
+or.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks-arr
+ows.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks-dot
+s.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-gri
+d.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-box
+.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-arc
+.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-cir
+cle_ellipse.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-ref
+_rot.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-put
+.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-code-psp
+icture.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pstricks.con
+))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks\pst-fp.tex
+`pst-fp' v0.06, 2020/11/20 (hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pstricks\pst-all.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-plot\pst-plot.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/xkeyval\pst-xkey.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/multido\multido.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/multido\multido.tex
+ v1.42, 2010/05/14 <tvz>))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-plot\pst-plot.tex
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-tools\pst-tools.t
+ex `PST-tools' v0.12, 2021/09/23 (hv))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks-add\pstricks
+-add.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-node\pst-node.tex
+ v1.44, 2024/07/04)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-arrow\pst-arrow.t
+ex `pst-arrow' v0.05, 2021/11/16 (dr,hv))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-3d\pst-3d.tex
+`PST-3d' v1.11, 2010/02/14 (tvz))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-math\pst-math.tex
+`pst-math' v0.67 , (CJ,hv)) `pstricks-add' v3.94, 2023/04/17 (dr,hv))
+ v1.94, 2022/11/21 (tvz,hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-node\pst-node.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-node\pst-node.tex
+))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-tree\pst-tree.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-tree\pst-tree.tex
+ v1.14, 2021/09/04(tvz,dg,hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-grad\pst-grad.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-grad\pst-grad.tex
+`pst-grad' v1.06, 2006/11/27 (tvz,dg,hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-coil\pst-coil.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-coil\pst-coil.tex
+ v1.06, 2006/11/27
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-node\pst-node.tex
+)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-text\pst-text.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-text\pst-text.tex
+ v1.01, 2018/12/22(tvz,hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-3d\pst-3d.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-3d\pst-3d.tex))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-eps\pst-eps.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-eps\pst-eps.tex
+ v1.00, 2006/11/04))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-fill\pst-fill.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-fill\pst-fill.tex
+`PST-Fill' v1.02, 2021/10/01 (tvz,dg,hv)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pstricks-add\pstricks-a
+dd.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-math\pst-math.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pst-calculate\pst-calcu
+late.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/siunitx\siunitx.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/translations\translatio
+ns.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pdftexcmds\pdftexcmds
+.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/infwarerr\infwarerr.s
+ty))) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/tools\array.sty))
+) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifluatex.sty)
+ (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/xstring\xstring.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/xstring\xstring.tex))
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pst-math\pst-math.tex
+))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pstricks-add\pstricks
+-add.tex)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amscls\amsthm.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/comment\comment.sty
+Excluding comment 'comment')
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/soul\soul.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/soul\soul-ori.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/etexcmds\etexcmds.sty
+))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/jknappen\mathrsfs.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/algorithm2e\algorithm2e
+.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/ifoddpage\ifoddpage.sty
+) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/tools\xspace.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/relsize\relsize.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/ulem\ulem.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/multirow\multirow.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/multirow\bigstrut.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/url\url.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algpseudoc
+ode.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/algorithmicx\algorithmi
+cx.sty
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+)
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/tools\enumerate.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/makecell\makecell.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/iftex\ifvtex.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/geometry\geometry.cfg))
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/frontendlayer\tikz.
+sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgf.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/basiclayer\pgfcore.
+sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/systemlayer\pgfsys.
+sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgf.c
+fg)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s-pdftex.def
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+s-common-pdf.def)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+ssoftpath.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/systemlayer\pgfsy
+sprotocol.code.tex))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+e.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/math\pgfint.code.
+tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epoints.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathconstruct.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathusage.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+escopes.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+egraphicstate.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+etransformations.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+equick.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eobjects.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epathprocessing.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+earrows.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eshade.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eimage.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+eexternal.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+elayers.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+etransparency.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+epatterns.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/basiclayer\pgfcor
+erdf.code.tex)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+shapes.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+plot.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pgfco
+mp-version-0-65.sty)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/pgf/compatibility\pgfco
+mp-version-1-18.sty))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z\tikz.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryplothandlers.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/modules\pgfmodule
+matrix.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarytopaths.code.tex)))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibraryshapes.geometric.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries/shapes\
+pgflibraryshapes.geometric.code.tex))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibraryarrows.code.tex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/libraries\pgflibr
+aryarrows.code.tex))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarybackgrounds.code.tex)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tik
+z/libraries\tikzlibrarypositioning.code.tex)
+\emailauthor{lavinia.amorosi@uniroma1.it}{Lavinia Amorosi}
+\emailauthor{paolo.dellolmo@uniroma1.it}{Paolo Dell'Olmo}
+\emailauthor{puerto@us.es}{Justo Puerto}
+\emailauthor{cvalverde@us.es}{Carlos Valverde \corref {mycorrespondingauthor}}
+No file main.aux.
+
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
+ii
+[Loading MPS to PDF converter (version 2006.09.02).]
+)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-b
+ase.sty
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/00miktex\epstopdf-sys.c
+fg))
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/translations/dicts\tran
+slations-basic-dictionary-english.trsl)
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsa.fd)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/amsfonts\umsb.fd)
+(C:\Users\carlo\AppData\Local\Programs\MiKTeX\tex/latex/jknappen\ursfs.fd)
+
+Package natbib Warning: Citation `art:Chiaraviglio19' on page 1 undefined on in
+put line 151.
+
+
+Package natbib Warning: Citation `art:shi2024' on page 1 undefined on input lin
+e 151.
+
+
+Package natbib Warning: Citation `art:Amorosi19' on page 1 undefined on input l
+ine 151.
+
+
+Package natbib Warning: Citation `art:Amorosi2024' on page 1 undefined on input
+ line 151.
+
+
+Package natbib Warning: Citation `art:Amorosi2021' on page 1 undefined on input
+ line 151.
+
+
+Package natbib Warning: Citation `art:Amorosi2023' on page 1 undefined on input
+ line 151.
+
+
+Package natbib Warning: Citation `art:Nexand14' on page 1 undefined on input li
+ne 151.
+
+
+Package natbib Warning: Citation `art:Tokekaretal16' on page 1 undefined on inp
+ut line 151.
+
+
+Package natbib Warning: Citation `art:Otto18' on page 1 undefined on input line
+ 151.
+
+
+[1
+Non-PDF special ignored!
+<special> header=pstricks.pro
+Non-PDF special ignored!
+<special> header=pst-algparser.pro
+Non-PDF special ignored!
+<special> header=pst-tools.pro
+Non-PDF special ignored!
+<special> header=pst-dots.pro
+Non-PDF special ignored!
+<special> header=pst-node.pro
+Non-PDF special ignored!
+<special> header=pst-3d.pro
+Non-PDF special ignored!
+<special> header=pst-math.pro
+Non-PDF special ignored!
+<special> header=pstricks-add.pro
+Non-PDF special ignored!
+<special> header=pst-grad.pro
+Non-PDF special ignored!
+<special> header=pst-coil.pro
+Non-PDF special ignored!
+<special> header=pst-text.pro
+Non-PDF special ignored!
+<special> ps: /pssetRGBcolor /setrgbcolor load def /pssetCMYKcolor /setcmyk...
+Non-PDF special ignored!
+<special> ps:tx@Dict begin  gsave STV CP T /ps@rot 0 def grestore  end
+Non-PDF special ignored!
+<special> ps:tx@Dict begin  gsave STV CP T /ps@refangle 0.  def grestore  e...
+Non-PDF special ignored!
+<special> ps:tx@Dict begin  gsave STV CP T /ps@rot 0 def grestore  end
+Non-PDF special ignored!
+<special> ps:0.8 setlinewidth 0 setgray
+{C:/Users/carlo/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
+
+Package natbib Warning: Citation `Sonawane2023' on page 2 undefined on input li
+ne 163.
+
+
+Package natbib Warning: Citation `Mu2023' on page 2 undefined on input line 166
+.
+
+
+Package natbib Warning: Citation `Ahmed2024' on page 2 undefined on input line 
+166.
+
+
+Package natbib Warning: Citation `Tripipicchio2023' on page 2 undefined on inpu
+t line 166.
+
+
+Package natbib Warning: Citation `art:VAZQUEZ' on page 2 undefined on input lin
+e 169.
+
+
+Package natbib Warning: Citation `art:Wang2024' on page 2 undefined on input li
+ne 169.
+
+
+Package natbib Warning: Citation `Li2025' on page 2 undefined on input line 169
+.
+
+
+[2]
+
+Package natbib Warning: Citation `Li2025' on page 3 undefined on input line 172
+.
+
+
+LaTeX Warning: Reference `section:description' on page 3 undefined on input lin
+e 172.
+
+
+
+pdfTeX warning: pdflatex.exe (file ./pictures/set_I.pdf): PDF inclusion: found 
+PDF version <1.7>, but at most version <1.5> allowed
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+[3]
+[4 <./pictures/set_I.pdf>]
+
+Package natbib Warning: Citation `heier2014grid' on page 5 undefined on input l
+ine 223.
+
+
+LaTeX Warning: Reference `fig:Exagon' on page 5 undefined on input line 245.
+
+
+[5]
+
+LaTeX Warning: Reference `section:description' on page 6 undefined on input lin
+e 259.
+
+
+LaTeX Warning: Reference `table:variables1' on page 6 undefined on input line 2
+61.
+
+
+LaTeX Warning: Reference `table:variables2' on page 6 undefined on input line 2
+61.
+
+(tables/table_binary_variables.tex
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+) (tables/table_continuous_variables.tex
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+)
+[6 <./pictures/Exagon.png>]
+
+LaTeX Warning: Reference `eq:location_1z' on page 7 undefined on input line 281
+.
+
+
+[7]
+
+LaTeX Warning: Reference `eq:location_4' on page 8 undefined on input line 324.
+
+
+
+LaTeX Warning: Reference `eq:location_5' on page 8 undefined on input line 324.
+
+
+
+LaTeX Warning: Reference `eq:location_5b' on page 8 undefined on input line 324
+.
+
+
+LaTeX Warning: Reference `eq:location_6' on page 8 undefined on input line 324.
+
+
+
+LaTeX Warning: Reference `eq:location_7' on page 8 undefined on input line 324.
+
+
+
+LaTeX Warning: Reference `eq:location_8' on page 8 undefined on input line 324.
+
+
+
+LaTeX Warning: Reference `eq:location_8b' on page 8 undefined on input line 324
+.
+
+
+[8]
+
+LaTeX Warning: Reference `eq:drone_path_1' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_2' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_3' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_4' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_5' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_6' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_7' on page 9 undefined on input line 34
+7.
+
+
+Package natbib Warning: Citation `MTZ1960' on page 9 undefined on input line 34
+7.
+
+
+LaTeX Warning: Reference `eq:drone_path_7b' on page 9 undefined on input line 3
+47.
+
+
+LaTeX Warning: Reference `eq:drone_path_8' on page 9 undefined on input line 34
+7.
+
+
+[9 <./to_find_ourselves.png>]
+
+LaTeX Warning: Reference `eq:location_1' on page 10 undefined on input line 397
+.
+
+
+LaTeX Warning: Reference `eq:location_7' on page 10 undefined on input line 397
+.
+
+
+[10]
+
+LaTeX Warning: Reference `eq:dist_ext_xy' on page 11 undefined on input line 41
+7.
+
+
+LaTeX Warning: Reference `eq:dist_ext_z1' on page 11 undefined on input line 41
+7.
+
+
+LaTeX Warning: Reference `eq:dist_ext_z2' on page 11 undefined on input line 41
+7.
+
+
+[11]
+
+LaTeX Warning: Reference `eq:dep_ener_up' on page 12 undefined on input line 47
+8.
+
+
+LaTeX Warning: Reference `eq:dep_ener_down' on page 12 undefined on input line 
+478.
+
+
+LaTeX Warning: Reference `eq:drone_path_1' on page 12 undefined on input line 5
+28.
+
+
+LaTeX Warning: Reference `eq:drone_path_7b' on page 12 undefined on input line 
+528.
+
+
+LaTeX Warning: Reference `eq:mon' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:k' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:VI-1' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:VI-2' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:location_1' on page 12 undefined on input line 528
+.
+
+
+LaTeX Warning: Reference `eq:location_8b' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:dfs' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dist_int_rl' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:dist_ext_z2' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:efs' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:ener_int_rl' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:ener_ext' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dep_dist' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dep_ener_down' on page 12 undefined on input line 
+528.
+
+
+LaTeX Warning: Reference `eq:end_lin1' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:endurance' on page 12 undefined on input line 528.
+
+
+
+LaTeX Warning: Reference `eq:drone_path_1' on page 12 undefined on input line 5
+28.
+
+
+LaTeX Warning: Reference `eq:drone_path_7b' on page 12 undefined on input line 
+528.
+
+
+LaTeX Warning: Reference `eq:mon' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:k' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:VI-1' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:VI-2' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:location_1' on page 12 undefined on input line 528
+.
+
+
+LaTeX Warning: Reference `eq:location_8b' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:dfs' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dist_int_rl' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:dist_ext_z2' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:efs' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:ener_int_rl' on page 12 undefined on input line 52
+8.
+
+
+LaTeX Warning: Reference `eq:ener_ext' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dep_dist' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:dep_ener_down' on page 12 undefined on input line 
+528.
+
+
+LaTeX Warning: Reference `eq:end_lin1' on page 12 undefined on input line 528.
+
+
+LaTeX Warning: Reference `eq:endurance' on page 12 undefined on input line 528.
+
+
+
+[12] (tables/table_binary_variables_new.tex)
+
+LaTeX Warning: Reference `table:variables1_alt' on page 13 undefined on input l
+ine 538.
+
+
+LaTeX Warning: Reference `table:variables2' on page 13 undefined on input line 
+538.
+
+
+[13]
+
+LaTeX Warning: Reference `eq:mon' on page 14 undefined on input line 568.
+
+
+LaTeX Warning: Reference `eq:VI-2' on page 14 undefined on input line 568.
+
+
+LaTeX Warning: Reference `eq:mon' on page 14 undefined on input line 571.
+
+
+LaTeX Warning: Reference `eq:VI-2' on page 14 undefined on input line 571.
+
+

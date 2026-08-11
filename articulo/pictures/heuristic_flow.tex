@@ -1,0 +1,33 @@
+\documentclass[tikz,border=2pt]{standalone}
+\usepackage{amssymb}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+\begin{document}
+\tikzstyle{startstop} = [rectangle, rounded corners, minimum width=2cm, minimum height=0.6cm, align=center, draw=black, fill=red!30, font=\footnotesize]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=2cm, minimum height=0.6cm, align=center, draw=black, fill=blue!30, font=\footnotesize]
+\tikzstyle{process} = [rectangle, minimum width=2.5cm, minimum height=0.7cm, align=center, draw=black, fill=orange!30, font=\footnotesize]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\begin{tikzpicture}[node distance=0.7cm]
+\node (input) [io] {Instance $\mathcal{R}$, $v_0$, drone, wind};
+\node (s1) [process, below=of input] {Stage 1:\\ Chain Selection};
+\node (s2) [process, below=of s1] {Stage 2:\\ Build Ring Info};
+\node (s3) [process, below=of s2] {Stage 3:\\ NN TSP};
+\node (s4) [process, below=of s3] {Stage 4:\\ 2-opt};
+\node (s5) [process, below=of s4] {Stage 5:\\ Split by Endurance};
+\node (s6) [process, below=of s5] {Stage 6:\\ Entry-Point Opt.};
+\node (s7) [process, below=of s6] {Stage 7:\\ Local Search};
+\node (output) [io, below=of s7] {Feasible solution $S$};
+\node (miqp) [startstop, below=of output, yshift=-0.2cm] {MIQP warm start};
+
+\draw [arrow] (input) -- (s1);
+\draw [arrow] (s1) -- node[right, font=\footnotesize] {$s:\mathcal{R}\to\mathbb{N}$} (s2);
+\draw [arrow] (s2) -- node[right, font=\footnotesize] {$\mathcal{K}$} (s3);
+\draw [arrow] (s3) -- (s4);
+\draw [arrow] (s4) -- node[right, font=\footnotesize] {$\pi$} (s5);
+\draw [arrow] (s5) -- node[right, font=\footnotesize] {$\mathcal{P}$} (s6);
+\draw [arrow] (s6) -- (s7);
+\draw [arrow] (s7) -- (output);
+\draw [arrow, dashed] (output) -- (miqp);
+\end{tikzpicture}
+\end{document}

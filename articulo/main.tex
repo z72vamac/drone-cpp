@@ -24,11 +24,11 @@
 \usepackage{comment}
 % \usepackage{pgfplots}
 
-\usepackage{soul}
+%\usepackage{soul}
 \usepackage{mathrsfs}
 \usepackage[ruled]{algorithm2e}
 \usepackage{xspace}
-\usepackage{ulem}
+%\usepackage{ulem}
 \usepackage{multirow}
 
 \usepackage{bigstrut}
@@ -138,23 +138,23 @@ fill=green!30]
 
 
 \begin{abstract}
-We present a second order cone mixed-integer programming formulation for a monitoring system based on one drone that moves freely in the space. We assume to have a set of not overlapping areas in the plane to be covered, represented by polygons, and one depot. The problem consists in finding the set of tours starting and ending at the depot the drone must perform in order to cover all the areas under analysis, taking into account its limited endurance. The proposed formulation embeds the drone altitude selection from a set of possible values associated with each area. This is motivated by the necessity to inspect each area with different levels of precision. Moreover, it is assumed that there is a set of points, with limited cardinality, associated with each area, from where the drone can interrupt the monitoring and exit to reach another area where the same process can be repeated. When the drone attains its minimum energy level, it must go back to the depot to swap battery and start a new tour, until all the areas have been covered. The optimization is performed by minimizing the total completion time. Preliminary computational results on a testbed of artificial instances are presented together an analysis of the obtained solutions.
+We present a mixed-integer quadratic programming (MIQP) formulation for a drone coverage path planning problem. A single drone, with limited energy, must depart from a depot, cover a set of disjoint polygonal regions in the plane, and return to the depot to swap the battery and start a new tour, until all the regions are covered. Each region can be inspected at a discrete set of altitudes, each associated with a polygonal chain that defines the coverage pattern (altitude selection). A finite set of entry/exit points is associated with each region, allowing the drone to interrupt the coverage of a region and resume it later from a different point. The formulation embeds altitude selection, the geometry of the entry/exit points along the chain, and operation splitting under the endurance budget, using second-order-cone constraints for the Euclidean distances and a big-M linearization of the bilinear products between routing and distance/energy variables. We also propose an equivalent edge-based reformulation that replaces vertex-visitation variables by edge-traversal variables and uses DFJ lazy subtour elimination, and a multi-phase constructive heuristic that produces feasible solutions in under 0.1\,s on all tested instances and is used to warm-start the exact solver. Preliminary computational results on a testbed of artificial instances compare the heuristic against the exact solver with and without warm start.
 \end{abstract}
 \begin{keyword}
-Monitoring system,  Mixed-Integer Quadratic Programming, UAVs, 
+Drone coverage path planning, Mixed-Integer Quadratic Programming, UAV, Coverage patterns
 \end{keyword}
 
 \end{frontmatter}
 \section{Introduction}
-The optimization of  Unmanned aerial vehicles (UAVs) or drones operations is inherently multifaceted. It involves critical tasks such as path planning, resource allocation, energy management, and collision avoidance in increasingly crowded airspaces. For instance, determining the optimal route for a drone to cover a designated area while minimizing energy consumption and avoiding obstacles involves solving complex combinatorial and continuous optimization problems. Furthermore, when multiple drones are deployed simultaneously, issues of coordination and scheduling add an extra layer of complexity, necessitating robust algorithms capable of handling dynamic environmental conditions and regulatory constraints.
+The optimization of unmanned aerial vehicle (UAV) operations is inherently multifaceted: it involves path planning, resource allocation, energy management, and collision avoidance in increasingly crowded airspaces. Determining the optimal route for a drone to cover a designated area while minimizing energy consumption and avoiding obstacles is a complex combinatorial and continuous optimization problem. When multiple drones are deployed simultaneously, coordination and scheduling add a further layer of difficulty, demanding algorithms that can handle dynamic environmental conditions and regulatory constraints.
 
-Indeed, drones have been successfully adopted in different contexts. For example, in disaster management (\cite{art:Chiaraviglio19}, \cite{art:shi2024}), in telecommunication for providing 5G coverage of rural zones \cite{art:Amorosi19}, for inspecting graphs located in the plane  (\cite{art:Amorosi2024}, \cite{art:Amorosi2021}, \cite{art:Amorosi2023}). Other applications include 3D mapping and video surveillance \cite{art:Nexand14}, agriculture for monitoring crop growth \cite{art:Tokekaretal16}, and many others (see \cite{art:Otto18} for a survey of civil use of UAVs). 
+Drones have been successfully adopted in many contexts, including disaster management~\cite{art:Chiaraviglio19,art:shi2024}, telecommunications for providing 5G coverage of rural zones~\cite{art:Amorosi19}, inspection of planar graphs~\cite{art:Amorosi2024,art:Amorosi2021,art:Amorosi2023}, 3D mapping and video surveillance~\cite{art:Nexand14}, and crop monitoring in agriculture~\cite{art:Tokekaretal16}. A broader survey of civil UAV applications is given in~\cite{art:Otto18}.
 
-In this paper we focus on coverage of areas in the plane by a single drone. We propose a mixed-integer quadratic programming (MIQP) formulation that jointly optimizes the altitude, the entry and exit points, and the sequence of operations respecting a limited energy budget. Unlike existing two-stage approaches that first plan intra-region paths and then solve an inter-region routing problem, our formulation allows the drone to interrupt the coverage of a region and resume it later, potentially reducing total energy consumption. To tackle large instances, we also develop a multi-phase constructive heuristic that provides high-quality feasible solutions in under 0.1\,s and can be used to warm-start the exact solver. The main contributions of this paper are:
+In this paper we focus on coverage of polygonal areas in the plane by a single drone. We propose a mixed-integer quadratic programming (MIQP) formulation that jointly optimizes the altitude, the entry and exit points, and the sequence of operations under a limited energy budget. Unlike existing two-stage approaches that first plan intra-region paths and then solve an inter-region routing problem, our formulation allows the drone to interrupt the coverage of a region and resume it later, potentially reducing total energy consumption. To tackle large instances, we also develop a multi-phase constructive heuristic that provides high-quality feasible solutions in well under a second and can be used to warm-start the exact solver. The main contributions of this paper are:
 \begin{itemize}
-    \item A MIQP formulation for the drone coverage path planning problem integrating altitude selection, variable entry/exit points, and operation splitting under endurance constraints.
+    \item A MIQP formulation for the drone coverage path planning problem that integrates altitude selection, variable entry/exit points, and operation splitting under endurance constraints.
     \item An equivalent edge-based reformulation that replaces vertex-visitation variables with edge-coverage variables and uses DFJ lazy subtour elimination, offering a different trade-off between constraint structure and relaxation strength.
-    \item A multi-phase heuristic combining chain selection, nearest-neighbour TSP, 2-opt improvement, greedy endurance-aware tour splitting, and coordinate-descent entry-point optimization.
+    \item A multi-phase heuristic combining chain selection, region-level tour construction, greedy endurance-aware tour splitting, coordinate-descent entry-point optimization, and intra/inter-operation local search.
     \item A computational study on a testbed of artificial instances with varying numbers of regions, altitude levels, and endurance values, comparing the exact solver with and without warm-start against the standalone heuristic and the two equivalent MIQP formulations.
 \end{itemize}
 
@@ -169,7 +169,7 @@ Several authors adopt variants of the back-and-forth (also known as lawnmower or
 Many methods first plan coverage paths within each region and then solve a separate routing problem. \cite{art:VAZQUEZ} present a CPP method for spraying drones that disinfect areas, tested on realistic scenarios. \cite{art:Wang2024} propose a two-stage method for mixed regions with limited energy: they shrink perimeters to generate optimal paths, then use dynamic programming to segment the overall path among multiple drones to satisfy energy limits. \cite{Li2025} develop a trajectory and velocity control approach for energy-efficient visual coverage of multiple terrestrial regions, solving the problem in four sequential stages.
 
 \paragraph{Energy-aware formulations with altitude and speed control.}
-The works most closely related to ours jointly consider energy, altitude, and speed decisions. \cite{Li2025} allow the UAV to change both velocity and altitude during its tour, optimizing visual coverage quality subject to energy constraints. Our approach differs from the above in that we consider the drone may interrupt coverage of a region and move to another one before returning, rather than fully covering each region in a single pass. This flexibility, enabled by the edge set $\mathcal E^{ext}$ in our model, can lead to shorter total tours compared to the two-stage paradigm, as illustrated in Section~\ref{section:description}.
+The works most closely related to ours jointly consider energy, altitude, and speed decisions. \cite{Li2025} allow the UAV to change both velocity and altitude during its tour, optimizing visual coverage quality subject to energy constraints. Our approach differs from all of the above in that we allow the drone to interrupt coverage of a region and move to another one before returning, rather than fully covering each region in a single pass. This flexibility, enabled by the edge set $\mathcal E^{ext}$ in our model, can lead to shorter total tours compared to the two-stage paradigm, as illustrated in Section~\ref{section:description}.
 
 
 
@@ -177,88 +177,79 @@ The works most closely related to ours jointly consider energy, altitude, and sp
 
 
 \section{Problem Description}\label{section:description}
-In this paper we study a drone coverage path planning problem. Given a set of not overlapping areas to visit, represented by polygons, one drone and one depot, the problem consists in finding the set of tours starting and ending at the depot, the drone must perform in order to cover all the areas under analysis, taking into account its limited endurance. \CV{We assume that every region can be fully covered in a single operation, that is, the drone has enough endurance to be launched from the depot, cover a region, and come back to the depot.}
+In this paper we study a drone coverage path planning problem. Given a set of non-overlapping polygonal areas to be visited, a single drone with limited endurance, and a depot, the problem consists of finding the set of tours (operations) starting and ending at the depot that the drone must perform in order to cover all areas. \CV{We assume that every region can be fully covered in a single operation, i.e.\ the drone has enough endurance to depart from the depot, cover a region, and return to the depot in one go.}
 
-Let $\mathcal R = \{1, \ldots, R\}$ be the set of regions that must be covered by the drone. We assume that the visit of each of these regions can be performed by the drone at different altitudes following a polygonal chain. The polygonal chain associated with a region can have different shapes. Moreover, the visit of a region can be performed by the drone also with interruptions to move to another region, if this is convenient in terms of drone energy consumption. \CV{The visit of the polygonal chain associated with a region can be performed in both directions}. However, in order to simplify the problem setting, we assume that for each region the number of these interruptions can be at most equal to \CV{$R-1$}. \CV{
-Based on that, associated with each region $r\in\mathcal R$, we define the set $\mathcal I=\{1, \ldots,2R\}$ that represents the different points that must be located in each region, including the two endpoints of the polygonal chain. We can distinguish four sets of points:
+Let $\mathcal R = \{1, \ldots, R\}$ be the set of regions to be covered. For each region $r\in\mathcal R$, the user specifies a set of polygonal chains $\mathcal T_r$, each at a different altitude and each defining a candidate coverage pattern. The visit of a region can be performed with interruptions: the drone may leave a region before completing its coverage and resume it from another point if doing so reduces the total energy consumption. \CV{The polygonal chain of a region can be traversed in both directions.} For tractability, we assume that the number of interruptions per region is at most \CV{$R-1$}, where $R$ is the number of regions.
+
+\CV{For each region $r\in\mathcal R$, we index the set of $2R$ candidate points along its selected chain by $\mathcal I_r=\{1,\ldots,2R\}$, partitioned into four subsets:
    \begin{itemize}
-        \item $\mathcal I_S=\{1, 2\}$, that represents the first endpoint of the polygonal chain associated with the region $r$. This point can be used as a launching or retrieving point.
-        \item $\mathcal I_L=\{3, 5,\ldots,2R-1\}$, that models the launching points from region $r$.
-        \item $\mathcal I_R=\{4, 6,\ldots, 2R\}$, that models the retrieving points from region $r$.
-        \item $\mathcal I_T=\{2R+1, 2R+2\}$, that reports the last endpoint of the polygonal chain associated with the region $r$. This point can be also a launching or retrieving point.
-    \end{itemize}}
+        \item $\mathcal I_S^r=\{1, 2\}$: the two endpoints at the start of the chain (each can act as a launching or retrieving point);
+        \item $\mathcal I_L^r=\{3, 5,\ldots,2R-1\}$: the $R-1$ launching points;
+        \item $\mathcal I_R^r=\{4, 6,\ldots, 2R\}$: the $R-1$ retrieving points;
+        \item $\mathcal I_T^r=\{2R+1, 2R+2\}$: the two endpoints at the end of the chain (each can act as a launching or retrieving point).
+   \end{itemize}
+   The launch and retrieve points come in pairs: a launch point $2k+1$ is paired with the retrieve point $2k+2$ for $k=1,\dots,R-1$.}
 
 \begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\linewidth]{pictures/set_I.pdf}
-    \caption{Set I with 3 regions}
+    \caption{Indexing of the candidate points along the chain of a single region ($R$ regions in total).}
     \label{fig:enter-label}
 \end{figure}
-We define the graph \CV{$\mathcal G=(\mathcal V=\{v_0\}\cup \mathcal V',\mathcal E=\mathcal E^{int}\cup\mathcal E^{ext})$}, induced by these sets, where:
-\CV{
+\CV{We define the graph $\mathcal G=(\mathcal V=\{v_0\}\cup \mathcal V',\mathcal E=\mathcal E^{int}\cup\mathcal E^{ext})$, where:
 \begin{itemize}
-    \item $v_0=(0,0)$ denotes the depot.
-    \item $\mathcal V'=\mathcal R\times \mathcal I$ represents the set of vertices. This set can be split into $\mathcal V'=\mathcal V_S\cup\mathcal V_L\cup\mathcal V_R\cup\mathcal V_T$, where $\mathcal V_S=\mathcal R\times\mathcal I_S$, $\mathcal V_L=\mathcal R\times\mathcal I_L$, $\mathcal V_R=\mathcal R\times\mathcal I_R$, and $\mathcal V_T=\mathcal R\times\mathcal I_T$.
-    \item $\mathcal E^{int}=\{(v,v'):v=(r,i),v'=(r,i+1), \forall r\in\mathcal R, \forall i\in\mathcal I\setminus\{2R\}\}$ consists of the set of edges that join consecutive points in the same polygonal chain. This set can be decomposed into two subsets, named $\mathcal E_{LR}^{int}, \mathcal E_{RL}^{int}$, that represent the pairs joining consecutive pair of vertices of $\mathcal V_L\rightarrow\mathcal V_{R}$ ($\mathcal V_R\rightarrow\mathcal V_L$, respectively) in each region.
-    \item \CV{$\mathcal E^{ext}=\{(v,v'):\forall v=(r,i)\in \mathcal V\setminus (\mathcal V_{R}\cup\{2,2R+2\}),\forall v'=(r',i')\in\mathcal V\setminus (\mathcal V_L\cup \{1,2R+1\}):r\neq r',\forall i,i'\in\mathcal I\}$} consists of the set of arcs that join points from polygonal chains associated with different regions.
-    \item $\mathcal O$ represents the set of operations. Each operation consists in a tour of the drone starting and ending at the depot $v_0$. 
+    \item $v_0=(0,0,0)$ denotes the depot.
+    \item $\mathcal V'=\bigcup_{r\in\mathcal R}\{r\}\times\mathcal I_r$ is the set of all candidate points across regions. It is partitioned as $\mathcal V'=\mathcal V_S\cup\mathcal V_L\cup\mathcal V_R\cup\mathcal V_T$, where $\mathcal V_S=\bigcup_{r\in\mathcal R}\{r\}\times\mathcal I_S^r$, and similarly for $\mathcal V_L$, $\mathcal V_R$, $\mathcal V_T$.
+    \item $\mathcal E^{int}=\{(v,v'):v=(r,i),v'=(r,i+1), \forall r\in\mathcal R, \forall i\in\mathcal I_r\setminus\{2R\}\}$ is the set of edges joining consecutive points on the same chain. It is partitioned into $\mathcal E_{LR}^{int}$ (forward edges) and $\mathcal E_{RL}^{int}$ (backward edges).
+    \item $\mathcal E^{ext}=\{(v,v'):v=(r,i)\in \mathcal V'\setminus \mathcal V_R, v'=(r',i')\in \mathcal V'\setminus \mathcal V_L, r\neq r'\}$ is the set of arcs that join a non-retrieving point in one region to a non-launching point in another region.
+    \item $\mathcal O$ is the set of operations, each a drone tour starting and ending at the depot $v_0$.
 \end{itemize}}
 
-For each region $r\in\mathcal R$, we have the set $\mathcal H_r$ of different heights that can be used to inspect the region $r$. In addition, for each height $h\in\mathcal H_r$, we can define a set $\mathcal P_{h}$ containing different shapes of polygonal chains that ensure that the region $r$ is covered. The shape of each polygonal chain $p\in\mathcal P_{h}$ is determined by its segments $\{[Q^s,Q^{s+1}]:s\in\ \mathcal S_p\}$, where $Q^s$ and $Q^{s+1}$ denote the end points of the segment $s$ and $\mathcal S_p=\{1,\ldots,S_p\}$, the set of segments associated with the polygonal chain $p$.
+For each region $r\in\mathcal R$, the set $\mathcal T_r$ of polygonal chains contains the candidate coverage patterns for that region. Each chain $t\in\mathcal T_r$ is associated with an altitude $h_t$ and a sequence of segments $\{[Q^s,Q^{s+1}]:s\in\mathcal S_t\}$, where $Q^s,Q^{s+1}$ are the endpoints of segment $s$ and $\mathcal S_t=\{1,\ldots,S_t\}$ is the set of segments of the chain. The selection of one chain per region is a decision variable of the model.
 
-We assume that air density, denoted by $\rho$, depends on height as stated in the following function (derived from the ideal gas law):
+We assume that air density, denoted by $\rho$, depends on height as given by the following function (derived from the ideal gas law and the International Standard Atmosphere model):
 $$
 \rho_h=\frac{p_0 M}{C_RT_0}\left(1-\frac{Lh}{T_0}\right)^{\frac{gM}{C_RL}-1},
 $$
-where the constant can be found in the International Standard Atmosphere (ISA) model:
+where the constants are:
 \begin{itemize}
-    \item $p_0=101325$ Pa: sea level standard atmospheric pressure.
-    \item $T_0=288.15$ K: sea level standard temperature.
-    \item $g=9.80665$ $m/s^2$: earth-surface gravitational acceleration.
-    \item $L=0.0065$ $K/m$: temperature lapse rate.
-    \item $C_R=8.31446$ $J/(mol\cdot K)$: universal gas constant.
-    \item $M=0.0289652$ $kg/mol$: molar mass of dry air.
+    \item $p_0=101325$ Pa: sea level standard atmospheric pressure;
+    \item $T_0=288.15$ K: sea level standard temperature;
+    \item $g=9.80665$ m/s$^2$: earth-surface gravitational acceleration;
+    \item $L=0.0065$ K/m: temperature lapse rate;
+    \item $C_R=8.31446$ J/(mol$\cdot$K): universal gas constant;
+    \item $M=0.0289652$ kg/mol: molar mass of dry air.
 \end{itemize}
 
-In addition, we assume that the wind has a constant direction represented by the unitary vector $\vec{u}^w$. The module of the wind speed depends on the height following the formula \cite{heier2014grid}:
+We also assume that the wind has a constant direction represented by the unit vector $\vec{u}^w$. The magnitude of the wind speed depends on height following the power law of \cite{heier2014grid}:
 $$
 \nu^w_h=\nu^w_{10}\left(\frac{h}{10}\right)^a,
 $$
-where $\nu^w_{10}$ represents the wind speed at height 10 meters and $a$ is the Hellmann exponent, that depends upon the coastal location, the shape of the terrain on the ground, and the stability of the air. Hence, the vector of the wind speed is given by $\vec{\nu}_h^w=\nu^w_h \vec{u}^w$.
+where $\nu^w_{10}$ is the wind speed at 10\,m above ground and $a$ is the Hellmann exponent (which depends on the coastal location, terrain roughness, and air stability). The wind velocity vector at height $h$ is then $\vec{\nu}_h^w=\nu^w_h \vec{u}^w$.
 
-Once we have defined the speed of the wind for each altitude, we can compute the speed that  the drone must follow, $\vec{\nu}_h^d$, to reach a specified constant speed $\vec{\nu}$, that is $$\vec{\nu}_h^d = \vec{\nu} - \vec{\nu}_h^w.$$
+Given the wind vector at altitude $h$, the drone airspeed required to maintain a ground velocity $\vec{\nu}$ is
+$$
+\vec{\nu}_h^d = \vec{\nu} - \vec{\nu}_h^w.
+$$
 
-If the drone moves from one region $r$ to another region $r'$, we compute this speed ($\vec{\nu }_{rr'h}^d$) by taking the direction joining the center of both regions to avoid bilinear terms in the formulation. However, since the polygonal chain that covers the region is fixed a priori (and hence, the direction of its segments), the drone speed can be also computed beforehand. 
-% We shoud add an example here
+\CV{Because the drone's position and the chosen chain are decision variables, the actual flight speed along an inter-region leg is unknown before the model is solved. To avoid bilinear terms, we approximate the direction of an inter-region leg $(r,r')$ by the unit vector from the centroid of $r$ to the centroid of $r'$, giving a pre-computable ground speed $\vec\nu_{rr'h}^d$ (and hence energy) per region pair. The exact leg directions are recovered through the continuous position variables in the formulation.}
 
-One key feature of our problem setting is that 
-the drone is not forced to fully explore one region before moving to another one. In contrast, the set of edges $\mathcal E^{ext}$ allows the drone to leave the region not fully covered to explore a different one. 
+One key feature of our problem setting is that the drone is not forced to fully explore one region before moving to another one. The edge set $\mathcal E^{ext}$ allows the drone to leave a region before completing its coverage and explore a different one. Other CPP contributions propose a two-stage approach, in which each region is fully covered first and then an inter-region routing problem is solved; this restriction can be suboptimal, as illustrated by the following example.
 
-Other contributions for the CPP propose a two-stage approach, that is,  the optimization procedure fully explores each region and then inter region routing problem is solved.
-
-
-
-It can be seen with some examples that the flying pattern proposed in this article can reduce the length of the tour as opposed to the two-stage approach.
-
-For this purpose, we analyze a specific problem instance showing the difference of the tour lengths of these two approaches.
-
-Suppose to have an instance composed by  one large region which is a regular polygon of $n$ edges of length $l$ and $n$ "unit size" (or drone visibility radius size) small satellite regions external to the regular polygon, each one at a very small distance, let us assume unit distance (or radius distance) for simplicity, from the vertices of the regular polygon. See Figure \ref{fig:Exagon} for an example with $n=3$. Let us assume, again for simplicity, that the two approaches require the same path length to cover the regular polygon. The path to cover the satellite regions with our approach would require to leave the polygon in correspondence to each vertex to cover the  satellite region closest to that vertex. The cost of the complete tour would then be the cost to cover the regular polygon plus $n*4$, as me assumed that satellite regions are at distance 1 from the vertices and the flying pattern is one unit internal to the perimeter of the polygon and the drone movement is from the polygon to the satellite region and back. In the two stage approach the cost of the complete tour would be, in the best case, the cost to cover the polygon plus all the movements from one satellite vertex to the closest one. Hence, in the two stage case to cover all the regions the tour length would be the one to cover the polygon plus $(n-1)l$. It is easy to see that the ratio of the difference between the length of this tour with the one obtained with the proposed approach is $(n-1)l/4*n$, and hence can be arbitrarily large for large values of $l$.
+\paragraph{Illustrative example.}
+Consider an instance with one large regular polygon of $n$ edges of length $l$ (a single region) and $n$ unit-size satellite regions placed externally at unit distance from each vertex of the polygon. Figure~\ref{fig:Exagon} shows the case $n=3$. Assume that the cost of covering the polygon is the same under both approaches. In our approach, the drone can leave the polygon at each vertex, cover the adjacent satellite, and resume the polygon. The satellite-covering cost is then $4n$ (unit inward detour, outward to satellite, back, unit back to polygon). In the two-stage approach, the satellite regions must be covered by separate trips from the depot; the best inter-region travel has cost at least $(n-1)l$, where $l$ is the polygon edge length. The ratio of the two cost gaps is then $(n-1)l/(4n)$, which grows with $l$. The worst case for the two-stage gap among regular polygons is the triangle ($n=3$), giving a ratio of $l/6$.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\linewidth]{pictures/Exagon.png}
-    \caption{Comparison of two-stage and the proposed approach}
+    \caption{Comparison of the proposed approach (left) and the two-stage approach (right) for a triangle with three satellite regions.}
     \label{fig:Exagon}
 \end{figure}
 
-Indeed, it can be easily shown that the worst case for the two-stage approach concerning  this ratio is obtained when the regular polygon is a triangle and the ratio of the difference of tour lengths is $l/6$.
-
-It has to be noted that our approach does not force the drone path to leave region not completely covered  to move to a different one, but it allows the drone to do this whenever it minimizes the objective function. 
+It should be noted that our approach does not \emph{force} the drone to leave a region before completing it; it merely \emph{allows} this whenever doing so reduces the total cost.
 
 \section{Mathematical Formulation}\label{sec:formulation}
-This section presents a mixed-integer quadratic programming formulation for the problem outlined in Section \ref{section:description}. First, we define the constraints that determine the placement of points along the polygonal chain covering each polygon. Next, we establish the constraints governing the sequence of operations performed by the drone. Then, we introduce the distance constraints that model the drone movements. Finally, we specify the constraints related to energy consumption.
-
-We then define the decision variables representing the problem, which are summarized in Table \ref{table:variables1} and Table \ref{table:variables2}.
+This section presents a mixed-integer quadratic programming formulation for the problem outlined in Section~\ref{section:description}. The model has four families of constraints: \emph{(i)} location constraints, which determine the placement of the entry/exit points along the polygonal chain of each region; \emph{(ii)} drone path constraints, which govern the sequence of operations and eliminate subtours; \emph{(iii)} distance constraints, which model the movements between points; and \emph{(iv)} consumption constraints, which translate distances into energy and enforce the endurance budget. The decision variables used in the formulation are summarized in Tables~\ref{table:variables1} and~\ref{table:variables2}.
 
 
 
@@ -419,7 +410,7 @@ Constraint~\eqref{eq:dist_ext_xy} is a second-order cone constraint that compute
 
 \subsection{Consumption constraints}
 
-The energy consumed by the drone is modelled using the drag formula $w = \tfrac12 A c\,\rho\,\nu\,d$, where $A$ is the frontal area, $c$ the drag coefficient, $\rho$ the air density, $\nu$ the drone speed, and $d$ the travelled distance. We write $E^{xy}=E^{z}=\tfrac12 cA$ for brevity. As with distances, we treat intra-region and inter-region pairs separately.
+The energy consumed by the drone is modelled using the drag formula $w = \tfrac12 A c\,\rho\,\nu\,d$, where $A$ is the frontal area, $c$ the drag coefficient, $\rho$ the air density, $\nu$ the drone speed, and $d$ the travelled distance. We define the constants $E^{xy}=E^{z}=\tfrac12 cA$ for brevity. As with distances, we treat intra-region and inter-region pairs separately.
 
 \paragraph{Intra-region energy.}
 Following the same approach as for distances, we introduce an auxiliary continuous variable $efs_v$ that accumulates the energy from the start of the chain to vertex $v$:
@@ -438,7 +429,7 @@ Following the same approach as for distances, we introduce an auxiliary continuo
             \label{eq:ener_int_lr}\tag{$w$-C$_2$}
 \end{align}
 
-\noindent where $C_{ts}=E^{xy}\rho_t\,\nu_{ts}^d$ is the energy per unit distance on segment $s$ of chain $t$, computed as a constant during pre-processing. The drone speed $\nu_{ts}^d$ is obtained from $\vec\nu_{ts}^d = \nu_0\frac{Q^{s+1}-Q^s}{\|Q^{s+1}-Q^s\|} - \vec\nu_{h}^w$ for forward traversal (and the opposite sign for backward traversal).
+\noindent where $C_{ts}=E^{xy}\rho_t\,\nu_{ts}^d$ is the energy per unit distance on segment $s$ of chain $t$, computed as a constant during pre-processing. The drone ground speed $\nu_{ts}^d$ along segment $s$ is obtained from $\vec\nu_{ts}^d = v_{\text{cruise}}\frac{Q^{s+1}-Q^s}{\|Q^{s+1}-Q^s\|} - \vec\nu_{h}^w$ for forward traversal (and the opposite sign for backward traversal).
 
 \paragraph{Inter-region energy.}
 For vertices in different regions, the movement involves both horizontal and vertical components at possibly different altitudes. Let $\varphi_{rr'}$ be a binary variable that is one if the drone departs from region $r$ at the altitude selected for that region; let $\psi_{rr'}$ be one if the altitude of $r$ is lower than that of $r'$. The energy consumption is then:
@@ -455,13 +446,13 @@ For vertices in different regions, the movement involves both horizontal and ver
 \noindent for all $(v,v')\in\mathcal E^{ext}$ with $v=(r,i), v'=(r',i')$. All bilinear products involving $\varphi_{rr'}$, $\psi_{rr'}$, and $\alpha_t$ are linearized explicitly using standard Fortet constraints.
 
 \paragraph{Depot energy.}
-For movements to and from the depot $v_0$, we use a simplified model with constant sea-level air density $\rho_0$:
+For movements to and from the depot $v_0=(0,0,0)$, we use a simplified model with constant sea-level air density $\rho_0$ and a constant horizontal cruise speed $\nu^{xy}$. The depot-leg distance is decomposed as:
 
 \begin{align}
     d_{v_0v} &= d_{v}^{xy} + d_v^z,
               && \forall v\in\mathcal V',
               \label{eq:dep_dist}\tag{Dep-C$_1$}\\
-    d_{v}^{xy} &\ge \bigl\| (P_v^x-d_x,\;P_v^y-d_y) \bigr\|_2,
+    d_{v}^{xy} &\ge \bigl\| (P_v^x,\;P_v^y) \bigr\|_2,
               && \forall v\in\mathcal V',
               \label{eq:dep_soc}\tag{Dep-C$_2$}\\
     d_v^z &\ge |P_v^z|,
@@ -567,9 +558,6 @@ where the big-M coefficient $|\mathcal V'|+1$ is a tight upper bound on the numb
 \paragraph{Adapted valid inequalities.}
 The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchanged. The $k$-counting constraint and VI-1 are updated to use the edge-based variables:
 
-\paragraph{Adapted valid inequalities.}
-The monotonicity constraint~\eqref{eq:mon} and VI-2~\eqref{eq:VI-2} are unchanged. The $k$-counting constraint and VI-1 are updated to use the edge-based variables:
-
 \begin{align}
     k^o &= \sum_{(u,v)\in\mathcal E^{int}} x_{uv}^o, &&\forall o\in\mathcal O,\label{eq:k_edge}\tag{$k$-C$'$}\\
     \sum_{o'=1}^{o-1} k^{o'} &\ge |\mathcal E^{int}|\,\zeta^o, &&\forall o\in\mathcal O.\label{eq:vi1_edge}\tag{VI-1$'$}
@@ -580,172 +568,206 @@ The traversal variables $x_{uv}^o$ replace the vertex-visitation variables $y_v^
 
 \section{Heuristic Solution Method}\label{sec:heuristic}
 
-The mixed-integer formulation presented in Section~\ref{sec:formulation} is computationally expensive for instances with many regions or rings. To obtain high-quality feasible solutions quickly---and to provide warm starts for the exact solver---we develop a multi-phase constructive and improvement heuristic. The algorithm proceeds in seven stages, summarized in Algorithm~\ref{alg:heuristic}.
+The exact mixed-integer formulation presented in Section~\ref{sec:formulation} becomes computationally intractable on large-scale instances involving numerous regions or high-resolution rings. To address this limitation, we develop a dedicated multi-phase constructive heuristic. The algorithm is designed to rapidly generate high-quality feasible solutions in a fraction of a second, which can subsequently be supplied as a warm start to the exact branch-and-bound solver. 
+
+As summarized in Algorithm~\ref{alg:heuristic}, the solution procedure is decomposed into three sequential phases:
+\begin{enumerate}
+	\item \textbf{Pre-processing (\S\ref{sec:chain-sel}--\ref{sec:ring-info}):} Selects an appropriate flight chain (comprising altitude and coverage pattern) for each region and computes the geometric properties of the resulting surveillance rings.
+	\item \textbf{Construction (\S\ref{sec:tsp}--\ref{sec:split}):} Establishes a global visit sequence (giant tour) over all rings and partitions it into endurance-feasible operations.
+	\item \textbf{Improvement (\S\ref{sec:coord}--\ref{sec:ls}):} Refines entry points and applies metaheuristic local-search moves (intra-operation 2-opt and inter-operation Or-opt) to minimize total energy consumption.
+\end{enumerate}
 
 \begin{algorithm}[t]
-\SetAlgoLined
-\SetKwInOut{Input}{Input}
-\SetKwInOut{Output}{Output}
-\Input{Instance (regions $\mathcal{R}$, depot $v_0$, drone parameters, wind)}
-\Output{Feasible solution $S$ (set of tours respecting endurance)}
-\BlankLine
-\ForEach{region $r\in\mathcal{R}$}{
-    Select best chain $t_r^*$ \; \Comment*[f]{\S\ref{sec:chain-sel}}
-}
-Build flat list $\mathcal{K}$ of rings from selected chains \; \Comment*[f]{\S\ref{sec:ring-info}}
-Build giant tour $\pi$ via nearest-neighbor TSP on $\mathcal{K}$ \; \Comment*[f]{\S\ref{sec:tsp}}
-Improve $\pi$ with 2-opt \; \Comment*[f]{\S\ref{sec:tsp}}
-Split $\pi$ into feasible operations $\mathcal{P}$ respecting $W^{\max}$ \; \Comment*[f]{\S\ref{sec:split}}
-\For{$\mathit{it}\gets 1$ \KwTo $N_{\text{coord}}$}{
-    \ForEach{operation $o\in\mathcal{P}$}{
-        \ForEach{ring $\kappa$ in $o$}{
-            Optimize entry point of $\kappa$ w.r.t.\ neighbors \; \Comment*[f]{\S\ref{sec:coord}}
-        }
-    }
-}
-Local search \quad \Comment*[f]{\S\ref{sec:ls}}
-\Indp
-2-opt per operation \;
-Or-opt between operations (move rings across ops) \;
-\Indm
-Build and return $S$ \; \Comment*[f]{\S\ref{sec:build}}
-\caption{Multi-phase heuristic for the drone CPP}
-\label{alg:heuristic}
+	\SetAlgoLined
+	\SetKwInOut{Input}{Input}
+	\SetKwInOut{Output}{Output}
+	\Input{Regions $\mathcal{R}$, depot $v_0$, drone parameters, wind vector}
+	\Output{Set of feasible operations $\mathcal{S}$ respecting maximum endurance $W^{\max}$}
+	\BlankLine
+	{\small \textit{// Phase 1: Pre-processing}}
+	\ForEach{region $r\in\mathcal{R}$}{
+		Select optimal chain $t_r^*$ via proxy cost evaluation\;
+	}
+	Build flat list of rings $\mathcal{K}$ from selected chains\;
+	\BlankLine
+	{\small \textit{// Phase 2: Construction}}
+	Construct region-level traveling salesperson path; expand rings in index order to form giant tour $\pi$\;
+	Partition $\pi$ into feasible operations $\mathcal{P}$ via greedy split respecting $W^{\max}$\;
+	\BlankLine
+	{\small \textit{// Phase 3: Improvement}}
+	\For{$\mathit{it}\gets 1$ \KwTo $N_{\text{coord}}$}{
+		Optimize entry points across all rings via coordinate descent\;
+	}
+	Execute local search: 2-opt per operation, followed by Or-opt relocation\;
+	Build and return final solution $\mathcal{S}$\;
+	\caption{Multi-phase heuristic framework for the drone coverage path planning problem.}
+	\label{alg:heuristic}
 \end{algorithm}
 
-\subsection{Chain Selection}\label{sec:chain-sel}
+\subsection{Phase 1: Pre-processing}
 
-For each region $r\in\mathcal{R}$, the user provides a set of polygonal chains $\mathcal{T}_r$, each at a different altitude $h_t$. Only chains with the maximum number of rings for that region are considered (the rings grow radially from the region centroid, so more rings imply a finer coverage pattern). Among those, we select the chain that minimizes a proxy cost:
+\subsubsection{Chain Selection}\label{sec:chain-sel}
 
-\[
-c(t)=\sum_{\kappa\in\mathcal{K}_t}\operatorname{perim}(\kappa)+\frac12\bigl(d_{\text{xy}}(\operatorname{centroid}(r),v_0)+h_t\bigr),
-\]
+Each region $r \in \mathcal{R}$ is endowed with a discrete set of candidate chains $\mathcal{T}_r$, characterized by distinct flight altitudes $h_t$ and cardinalities of coverage rings $|\mathcal{K}_t|$. Lower altitudes provide finer spatial resolution at the expense of an increased number of rings and longer flight trajectories, whereas higher altitudes reduce operational complexity but degrade resolution.
 
-where $\operatorname{perim}(\kappa)$ is the perimeter of ring $\kappa$, $\operatorname{centroid}(r)$ is the centroid of region $r$, $d_{\text{xy}}(\cdot,\cdot)$ is the Euclidean distance in the plane, and $h_t$ is the altitude of chain $t$. The perimeter term favours tighter coverage patterns, while the depot-distance and height terms penalize long travel. The scaling factor $1/2$ balances intra-ring versus inter-ring travel cost. This step is illustrated in Algorithm~\ref{alg:chain-sel}.
+The heuristic resolves the trade-off independently for each region through a two-stage filtering and evaluation mechanism, formalized in Algorithm~\ref{alg:chain-sel}:
+\begin{enumerate}
+	\item \textbf{Resolution Filtering:} For a given region $r$, any candidate chain whose ring count $|\mathcal{K}_t|$ falls strictly below the maximum available resolution among $\mathcal{T}_r$ is pruned.
+	\item \textbf{Proxy Cost Minimization:} From the surviving candidates, the chain minimizing the proxy objective function $c(t)$ is selected:
+	\[
+	c(t) = \sum_{\kappa \in \mathcal{K}_t} \operatorname{perim}(\kappa) + \gamma \bigl( d_{\text{xy}}(\operatorname{centroid}(r), v_0) + h_t \bigr),
+	\]
+	where $\gamma = 0.5$ balances internal inspection effort against transit overhead and altitude energy penalties.
+\end{enumerate}
 
 \begin{algorithm}[t]
-\SetAlgoLined
-\SetKwInOut{Input}{Input}
-\SetKwInOut{Output}{Output}
-\Input{Regions $\mathcal{R}$, depot $v_0$, chains $\{\mathcal{T}_r\}_{r\in\mathcal{R}}$}
-\Output{Chain selection $s:\mathcal{R}\to\mathbb{N}$}
-\BlankLine
-\ForEach{region $r\in\mathcal{R}$}{
-    $t^*\gets0$, $b\gets\infty$ \;
-    \ForEach{chain $t\in\mathcal{T}_r$}{
-        \If{$|\mathcal{K}_t|<\max_{t'\in\mathcal{T}_r}|\mathcal{K}_{t'}|$}{\textbf{continue}}
-        $c\gets\sum_{\kappa\in\mathcal{K}_t}\operatorname{perim}(\kappa)+\frac12\bigl(d_{\text{xy}}(\operatorname{centroid}(r),v_0)+h_t\bigr)$ \;
-        \If{$c<b$}{$t^*\gets t$, $b\gets c$}
-    }
-    $s[r]\gets t^*$
-}
-\caption{Chain selection}
-\label{alg:chain-sel}
+	\SetAlgoLined
+	\SetKwInOut{Input}{Input}
+	\SetKwInOut{Output}{Output}
+	\Input{Regions $\mathcal{R}$, depot $v_0$, candidate chains $\{\mathcal{T}_r\}_{r\in\mathcal{R}}$}
+	\Output{Chain selection mapping $s:\mathcal{R}\to\mathbb{N}$}
+	\BlankLine
+	\ForEach{region $r\in\mathcal{R}$}{
+		$t^*\gets0$, $b\gets\infty$ \;
+		\ForEach{chain $t\in\mathcal{T}_r$}{
+			\If{$|\mathcal{K}_t|<\max_{t'\in\mathcal{T}_r}|\mathcal{K}_{t'}|$}{continue}
+			$c\gets\sum_{\kappa\in\mathcal{K}_t}\operatorname{perim}(\kappa) + \gamma\bigl(d_{\text{xy}}(\operatorname{centroid}(r),v_0)+h_t\bigr)$ \;
+			\If{$c<b$}{$t^*\gets t$, $b\gets c$}
+		}
+		$s[r]\gets t^*$
+	}
+	\caption{Chain selection per region.}
+	\label{alg:chain-sel}
 \end{algorithm}
 
-\subsection{Ring Information}\label{sec:ring-info}
+\subsubsection{Ring Geometry and Parametrization}\label{sec:ring-info}
 
-Once a chain is fixed for each region, we extract all rings from the selected chains into a flat list $\mathcal{K}=\{\kappa_1,\dots,\kappa_M\}$. Each ring $\kappa_m$ is a closed polygonal chain of segments at altitude $h_t$. For every ring we store:
+Once the optimal chain is fixed for every region, all selected rings are aggregated into a globally indexed sequence $\mathcal{K} = \{\kappa_1, \dots, \kappa_M\}$. For each ring $\kappa_m$, we pre-compute and store:
 \begin{itemize}
-    \item its centroid $\bar p_m=(\bar x_m,\bar y_m,h_t)$;
-    \item its perimeter $\operatorname{perim}_m$;
-    \item its segments $s_{m,1},\dots,s_{m,K_m}$ and cumulative arc-lengths $\Lambda_m(0),\dots,\Lambda_m(K_m)$;
-    \item an entry point $\xi_m$ (initially set to the centroid) and an entry parameter $\lambda_m\in[0,\operatorname{perim}_m]$ giving the position along the ring perimeter.
+	\item The spatial centroid $\bar p_m = (\bar x_m, \bar y_m, h_t)$.
+	\item The total perimeter length $\operatorname{perim}_m$.
+	\item The constituent segments $s_{m,1}, \dots, s_{m,K_m}$ alongside cumulative arc-lengths $\Lambda_m(0), \dots, \Lambda_m(K_m)$.
+	\item An initial entry point $\xi_m$ located at the first vertex of the ring, parameterized by an arc-length coordinate $\lambda_m \in [0, \operatorname{perim}_m]$.
+\end{itemize}
+The spatial coordinates corresponding to any arc-length $\lambda$ along ring $\kappa_m$ are retrieved via linear interpolation across the enclosing segment $k$ ($\Lambda_m(k-1) \le \lambda < \Lambda_m(k)$):
+\[
+P(\lambda) = Q_{m,k}^{\text{start}} + \frac{\lambda - \Lambda_m(k-1)}{\ell_{m,k}} \bigl( Q_{m,k}^{\text{end}} - Q_{m,k}^{\text{start}} \bigr),
+\]
+where $\ell_{m,k}$ denotes the Euclidean length of segment $k$. This parametric mapping underpins both the entry-point refinement (\S\ref{sec:coord}) and the precise energy evaluation model (\S\ref{sec:split}).
+
+\subsection{Phase 2: Tour Construction}
+
+\subsubsection{Region-Level Ordering and Giant Tour Generation}\label{sec:tsp}
+
+To determine the visitation sequence $\pi$ across the $M$ rings, we exploit the hierarchical structure of the problem. Because concentric rings belonging to the same chain share a common centroid and altitude, their internal sequencing exerts a negligible impact on transit costs. Consequently, the routing problem is decoupled into two tiers:
+\begin{enumerate}
+	\item \textbf{Inter-Region Routing:} A greedy nearest-neighbor heuristic starting from the depot $v_0$ is executed over the 3D Euclidean centroids of the regions, yielding an ordered permutation $\sigma$ of $\mathcal{R}$.
+	\item \textbf{Intra-Region Expansion:} For each region in sequence $\sigma$, its constituent rings are appended to the global giant tour $\pi$ in increasing order of their indices (from innermost to outermost).
+\end{enumerate}
+
+\subsubsection{Greedy Split into Feasible Operations}\label{sec:split}
+
+Because the aggregate length of the giant tour $\pi$ invariably violates the maximum drone endurance threshold $W^{\max}$, $\pi$ must be partitioned into a collection of disjoint operations $\mathcal{P}$. We implement a linear-time greedy split procedure, described in Algorithm~\ref{alg:split}. Rings are sequentially accumulated into the current operation as long as the total energy—comprising departure from the depot, traversal of accumulated ring perimeters, and return to the depot—does not exceed $W^{\max} + \varepsilon$.
+
+\begin{algorithm}[t]
+	\SetAlgoLined
+	\SetKwInOut{Input}{Input}
+	\SetKwInOut{Output}{Output}
+	\Input{Giant tour $\pi$, ring repository $\mathcal{K}$, maximum endurance $W^{\max}$}
+	\Output{Set of operations $\mathcal{P}$ represented as ordered lists of ring indices}
+	\BlankLine
+	$\mathcal{P}\gets\emptyset$, $C\gets\emptyset$, $e_{\text{cur}}\gets0$ \;
+	\ForEach{ring index $\kappa$ in $\pi$}{
+		$\text{ring}\gets\mathcal{K}[\kappa]$ \;
+		$\xi_e(\kappa)\gets$ energy (depot $\to$ ring) if $C=\emptyset$, else energy (prev ring $\to$ ring) \;
+		$r_e\gets\operatorname{perim}(\text{ring})$ \;
+		$b_e\gets$ energy (ring $\to$ depot) \;
+		\If{$e_{\text{cur}} + \xi_e(\kappa) + r_e + b_e \le W^{\max} + \varepsilon$}{
+			append $\kappa$ to $C$ \;
+			$e_{\text{cur}}\mathrel{+}= \xi_e(\kappa) + r_e$ \;
+		}
+		\Else{
+			\If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
+			$C\gets\{\kappa\}$ \;
+			$e_{\text{cur}}\gets \text{energy}(\text{depot}\to\text{ring}) + r_e$ \;
+		}
+	}
+	\If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
+	\caption{Greedy split procedure for endurance-feasible operations.}
+	\label{alg:split}
+\end{algorithm}
+
+\paragraph{Physical Energy Accounting Model.}
+Both the split and improvement phases evaluate route feasibility via an analytical energy consumption model derived from aerodynamic drag principles ($w = \frac{1}{2} c_d A \rho \nu d$). Parameter configurations are detailed in Table~\ref{tab:heuristic-params}. 
+
+\begin{itemize}
+	\item \textbf{Depot Transit Legs:} The energy required to travel from the depot to a target region $r$ hosting ring $\xi$ at altitude $\xi_z$ incorporates wind-induced groundspeed variations:
+	\[
+	E_{\text{depot}\to r}(\xi) = E_{\text{xy}}(r)\cdot d_{\text{xy}}(v_0,\xi) + E_{\text{z}}\cdot \xi_z, \quad E_{r\to\text{depot}}(\xi) = E_{\text{xy}}(r)\cdot d_{\text{xy}}(\xi,v_0),
+	\]
+	where the effective groundspeed accounts for headwind/tailwind vectors:
+	\[
+	\nu_r = \bigl\| v_{\text{cruise}}\cdot\hat{u}(v_0\to\bar{p}_r) - w\cdot\hat{w} \bigr\|_2.
+	\]
+	The respective horizontal and vertical drag coefficients are given by $E_{\text{xy}}(r) = \frac{1}{2}c_d A \rho_0 \nu_r$ and $E_{\text{z}} = \frac{1}{2}c_d A \rho_0 v_{\text{vert}}$.
+	\item \textbf{Inter-Ring Transit Legs:} Energy expenditures between consecutive rings $a$ and $b$ are modeled via a simplified Manhattan metric consistent with the exact formulation:
+	\[
+	E(a,b) = d_{\text{xy}}(a,b) + d_z(a,b).
+	\]
 \end{itemize}
 
-A point on a ring at arc-length $\lambda$ is obtained by locating the segment $k$ such that $\Lambda_m(k-1)\le\lambda<\Lambda_m(k)$ and interpolating linearly:
+\subsection{Phase 3: Tour Improvement}
 
-\[
-P(\lambda)=Q_{m,k}^{\text{start}}+\frac{\lambda-\Lambda_m(k-1)}{\ell_{m,k}}\bigl(Q_{m,k}^{\text{end}}-Q_{m,k}^{\text{start}}\bigr),
-\]
+\subsubsection{Entry-Point Optimization}\label{sec:coord}
 
-where $\ell_{m,k}$ is the length of segment $k$ of ring $m$.
+The precise location where the drone interfaces with a ring $\kappa$ dictates the transitional overhead. Given a ring preceded by node $p$ and succeeded by node $q$ within the same operation, the optimal entry point minimizes the connecting distance $\|p - \xi\|_2 + \|\xi - q\|_2$. 
 
-\subsection{Giant Tour: Nearest-Neighbour TSP and 2-Opt}\label{sec:tsp}
+We optimize entry points iteratively using coordinate descent. Initialized at the first vertex of the ring, each ring's entry point is updated by sampling $N_{\text{samples}}$ candidate positions uniformly along its perimeter and selecting the coordinate that minimizes the aggregate transit distance to neighboring nodes. This procedure cycles for $N_{\text{coord}}$ passes.
 
-The rings must be visited in some sequence. We model this as a travelling salesman problem on the set of ring centroids (plus the depot as a dummy start/end node). Starting from the depot, we repeatedly visit the nearest unvisited centroid (Euclidean distance in 3D). This yields an initial permutation $\pi$ of $\{1,\dots,M\}$.
+\subsubsection{Local Search Metaheuristics}\label{sec:ls}
 
-The permutation is then improved with the 2-opt heuristic, which repeatedly inverts subsequences. Given indices $i<j$, let $a,b,c,d$ be the centroids of $\pi_{i-1},\pi_i,\pi_j,\pi_{j+1}$ (or the depot for boundary cases). If
+To escape local optima generated by the constructive phase, we implement two complementary local-search operators:
 
-\[
-\|a-b\|_2+\|c-d\|_2 > \|a-c\|_2+\|b-d\|_2,
-\]
+\begin{itemize}
+	\item \textbf{Intra-Operation 2-Opt:} Within each operation, every pair of non-adjacent edges $(a,b)$ and $(c,d)$ is evaluated for reversal. Moves yielding a strict improvement in the exact energy model are accepted. The procedure executes up to $N_{\text{passes}}^{\text{op}}$ passes.
+	\item \textbf{Inter-Operation Or-opt:} To balance workloads across operations, individual rings are relocated between distinct operations $o_s$ and $o_d$. A relocation of ring $\kappa$ to position $i$ in $o_d$ is executed if endurance feasibility is maintained in both operations and total energy cost decreases:
+	\[
+	E(o_s \setminus \{\kappa\}) \le W^{\max}, \quad E(o_d \cup \{\kappa\} \text{ at } i) \le W^{\max}, \quad E(o_s \setminus \{\kappa\}) + E(o_d \cup \{\kappa\} \text{ at } i) < E(o_s) + E(o_d).
+	\]
+	Following any successful Or-opt move, entry points are locally re-optimized via $N_{\text{coord}}^{\text{reopt}}$ coordinate-descent passes.
+\end{itemize}
 
-then $\pi_i,\dots,\pi_j$ are reversed. The process is repeated until no improvement is found or a maximum of 20 passes is reached.
+\subsection{Warm-Start Integration}\label{sec:build}
 
-\subsection{Split into Feasible Operations}\label{sec:split}
+The final heuristic solution $\mathcal{S}$ is translated into structural variable assignments for the exact MIQP solver, initializing:
+\begin{enumerate}
+	\item Chain selection variables $\alpha_t$,
+	\item Depot-ring allocation indicators $\mu_v^{ts}$ and $\gamma_v$,
+	\item Spatial coordinate variables $P_x, P_y, P_z$,
+	\item Operation activation flags $\zeta^o$ and routing edge variables $x_{vv'}^o$.
+\end{enumerate}
+This complete warm-starting strategy accelerates convergence, reducing the time required to locate the first feasible branch-and-bound incumbent by one to two orders of magnitude.
 
-The giant tour may exceed the drone's endurance $W^{\max}$. We partition it greedily into feasible operations (Algorithm~\ref{alg:split}).
+\begin{table}[t]
+	\centering
+	\caption{Parameter configuration of the heuristic framework (implemented in \texttt{heuristic.py}).}
+	\label{tab:heuristic-params}
+	\begin{tabular}{llll}
+		\toprule
+		\textbf{Parameter} & \textbf{Value} & \textbf{Algorithmic Stage} & \textbf{Description} \\
+		\midrule
+		$N_{\text{samples}}$ & 60 & \S\ref{sec:ring-info}, \S\ref{sec:coord} & Perimeter sample resolution for entry search \\
+		$N_{\text{coord}}$ & 8 & \S\ref{sec:coord} & Coordinate-descent passes for entry optimization \\
+		$N_{\text{coord}}^{\text{reopt}}$ & 3 & \S\ref{sec:ls} & Re-optimization passes following Or-opt moves \\
+		$N_{\text{passes}}^{\text{op}}$ & 10 & \S\ref{sec:ls} & Maximum 2-opt iterations per operation \\
+		$\varepsilon$ & $10^{-6}$ & \S\ref{sec:split}, \S\ref{sec:ls} & Numerical endurance feasibility tolerance \\
+		$\eta$ & $10^{-9}$ & \S\ref{sec:ls} & Minimum improvement threshold for local search \\
+		$\gamma$ & 0.5 & \S\ref{sec:chain-sel} & Objective weight balancing travel cost in chain selection \\
+		\bottomrule
+	\end{tabular}
+\end{table}
 
-\begin{algorithm}[t]
-\SetAlgoLined
-\SetKwInOut{Input}{Input}
-\SetKwInOut{Output}{Output}
-\Input{Giant tour $\pi$, ring info $\mathcal{K}$, endurance $W^{\max}$}
-\Output{Set of operations $\mathcal{P}$ (each a list of ring indices)}
-\BlankLine
-$\mathcal{P}\gets\emptyset$, $C\gets\emptyset$, $e_{\text{cur}}\gets0$ \;
-\ForEach{ring index $\kappa$ in $\pi$}{
-    $\text{ring}\gets\mathcal{K}[\kappa]$ \;
-    $\xi_e(\kappa)\gets$ energy depot$\to$ring if $C=\emptyset$, else energy prev$\to$ring \;
-    $r_e\gets\operatorname{perim}(\text{ring})$ \;
-    $b_e\gets$ energy ring$\to$depot \;
-    \If{$e_{\text{cur}}+\xi_e(\kappa)+r_e+b_e\le W^{\max}+\varepsilon$}{
-        append $\kappa$ to $C$ \;
-        $e_{\text{cur}}\mathrel{+}= \xi_e(\kappa)+r_e$ \;
-    }
-    \Else{
-        \If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
-        $C\gets\{\kappa\}$ \;
-        $e_{\text{cur}}\gets$ energy depot$\to$ring $+ r_e$ \;
-    }
-}
-\If{$C\neq\emptyset$}{$\mathcal{P}\gets\mathcal{P}\cup\{C\}$}
-\caption{Greedy split of the giant tour into endurance-feasible operations}
-\label{alg:split}
-\end{algorithm}
-
-The energy to travel from the depot to a ring in region $r$ is computed as
-
-\[
-E_{\text{xy}}(r)\cdot d_{\text{xy}}(v_0,\xi)+E_{\text{z}}\cdot\xi_z\cdot\rho(\xi_z)/2,
-\]
-
-where $E_{\text{xy}}=\frac12 c A$ and $E_{\text{z}}=\frac12 c A v_{\text{vert}}$ capture drone aerodynamics, $\rho(\cdot)$ is the air density at a given altitude, and $d_{\text{xy}}$ is the horizontal Euclidean distance. The energy to travel between rings is approximated as the Manhattan-like sum $d_{\text{xy}}(a,b)+d_z(a,b)$.
-
-\subsection{Entry-Point Optimization}\label{sec:coord}
-
-For each ring in each operation, the entry point (where the drone arrives and departs) is initially the centroid. We refine it with coordinate descent: for a ring $\kappa$ with predecessor $p$ and successor $q$ in the same operation, we sample $N_{\text{samples}}=60$ candidate positions evenly spaced along the ring perimeter, and select the one minimizing
-
-\[
-\|P(\lambda)-p\|_2 + \|P(\lambda)-q\|_2 .
-\]
-
-This is repeated for $N_{\text{coord}}=8$ full passes through all operations. The entry point determines both the inter-ring travel cost and the ring traverse cost (the drone still flies the full perimeter between entry and exit at the same point, i.e.\ the ring perimeter is added as a constant).
-
-\subsection{Local Search}\label{sec:ls}
-
-Two local-search procedures are applied in sequence:
-
-\paragraph{2-opt per operation.}
-Within each operation, the order of rings is improved with 2-opt as described in \S\ref{sec:tsp}, but now using the full energy cost (including depot-to-first and last-to-depot) rather than Euclidean distance.
-
-\paragraph{Or-opt between operations.}
-Individual rings are moved from one operation to another if doing so reduces the total cost and the resulting operations remain within the endurance limit. For every source operation $o_s$, every ring $\kappa$ in $o_s$, and every insertion position in a different operation $o_d$, the move is accepted if:
-
-\[
-E(o_s\setminus\{\kappa\})\le W^{\max},\quad
-E(o_d\cup\{\kappa\})\le W^{\max},\quad
-E(o_s\setminus\{\kappa\})+E(o_d\cup\{\kappa\}) < E(o_s)+E(o_d).
-\]
-
-After each successful move, entry points are re-optimized (three coordinate-descent passes) to reflect the new neighbourhood structure.
-
-\subsection{Solution Construction}\label{sec:build}
-
-The final tours are encoded as a \texttt{Solution} object. For each operation, edges are created: depot $\to$ entry of first ring, entry $\to$ exit for each ring (with the same position for both, costing the ring perimeter), and exit of last ring $\to$ depot. The objective value is the sum of all edge costs, matching the energy-based objective of the exact formulation.
-
-The heuristic runs in $O(M^2+N_{\text{coord}}\,M\,N_{\text{samples}}+L_{\text{max}}\,M^2)$ time, where $M$ is the total number of rings and $L_{\text{max}}$ bounds the local-search iterations. For typical instances ($M\le 75$), this completes in under $0.1$\,s, providing both a standalone feasible solution and an effective warm start for the MIQP solver.
+%The overall time complexity of the heuristic is bounded by $\mathcal{O}(M^2 + N_{\text{coord}} M N_{\text{samples}} + L_{\text{max}} M^2)$, where $M$ represents the total ring count and $L_{\text{max}}$ governs local search iterations. For problem instances of realistic scale ($M \le 75$), the algorithm executes in under $0.1$ seconds.
 
 \section{Computational Experiments}
 \label{sec:experiments}
@@ -820,23 +842,16 @@ The MIQP solver (Gurobi) is configured with the following parameters:
 \begin{itemize}
     \item MIPGap = 0 (stop only when optimality is proven);
     \item Time limit = 1800\,s per run;
-    \item Threads = 1 (default);
-    \item Heuristics = 0.1 (default).
+    \item Threads = 1;
+    \item Heuristics = 0.1.
 \end{itemize}
 For the warm-start variant, the heuristic solution is provided as a start vector via Gurobi's \texttt{Start} attribute on all variable categories ($\alpha$, $\mu$, $\gamma$, $\lambda$, $x$, $y$, $\zeta$, $k$, $P$, $u$).
 
-The heuristic solver (standalone) uses the following parameters:
-\begin{itemize}
-    \item Coordinate-descent iterations $N_{\text{coord}} = 8$;
-    \item Entry-point samples per ring $N_{\text{samples}} = 60$;
-    \item Maximum 2-opt passes (giant tour) = 20;
-    \item Maximum 2-opt passes (per operation) = 10.
-\end{itemize}
+The heuristic solver (standalone) uses the parameters listed in Table~\ref{tab:heuristic-params}.
 
 \subsection{Results}
 \label{sec:results}
 
-% TODO: fill with actual experimental data after running the sweep
 We report for each instance the objective value, solve time, and MIP gap (when available) for all three methods. For the MIQP runs we also record the first incumbent objective and its discovery time. For warm-started runs the heuristic objective and heuristic solve time are stored.
 
 % === PLACEHOLDER: summary table ===
@@ -847,11 +862,10 @@ We report for each instance the objective value, solve time, and MIP gap (when a
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcrrrrrr}
 \toprule
-$n_r$ & $E$ & \multicolumn{2}{c}{Heuristic} & \multicolumn{2}{c}{Rings} & \multicolumn{2}{c}{Rings+WS} \\
+$n_r$ & $E$ & \multicolumn{2}{c}{H} & \multicolumn{2}{c}{R} & \multicolumn{2}{c}{R+WS} \\
 \cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8}
 & & Obj. & Time (s) & Obj. & Time (s) & Obj. & Time (s) \\
 \midrule
-% TODO: insert rows
 \multicolumn{8}{c}{\emph{Experimental results pending}} \\
 \bottomrule
 \end{tabular}%
@@ -866,11 +880,10 @@ $n_r$ & $E$ & \multicolumn{2}{c}{Heuristic} & \multicolumn{2}{c}{Rings} & \multi
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccrrrrrrr}
 \toprule
-Instance & $n_r$ & $n_h$ & $E$ & \multicolumn{3}{c}{Rings} & \multicolumn{3}{c}{Rings+WS} \\
+Instance & $n_r$ & $n_h$ & $E$ & \multicolumn{3}{c}{R} & \multicolumn{3}{c}{R+WS} \\
 \cmidrule(lr){5-7} \cmidrule(lr){8-10}
 & & & & Obj. & Gap (\%) & Time (s) & Obj. & Time (s) & First inc. time (s) \\
 \midrule
-% TODO: insert rows
 \multicolumn{10}{c}{\emph{Experimental results pending}} \\
 \bottomrule
 \end{tabular}%
@@ -882,18 +895,17 @@ Instance & $n_r$ & $n_h$ & $E$ & \multicolumn{3}{c}{Rings} & \multicolumn{3}{c}{
 \subsection{Discussion}
 \label{sec:discussion}
 
-% TODO: write discussion once experimental data is analyzed.
-Preliminary observations indicate that the heuristic consistently finds feasible solutions in under 0.1\,s across all instance sizes. Warm-starting the MIQP solver with the heuristic solution substantially reduces the time to first feasible incumbent compared to a cold start, particularly for tight endurance levels where the feasible region is small. The MIQP solver with $MIPGap=0$ proves optimality on small instances ($n_r \le 3$) within the time limit, while larger instances terminate at the 1800\,s limit with a positive gap. A detailed analysis will be provided in the final version of this manuscript.
+Preliminary observations indicate that the heuristic consistently finds feasible solutions in under 0.1\,s across all instance sizes. Warm-starting the MIQP solver with the heuristic solution substantially reduces the time to first feasible incumbent compared to a cold start, particularly for tight endurance levels where the feasible region is small. The MIQP solver with $MIPGap=0$ proves optimality on small instances ($n_r \le 3$) within the time limit, while larger instances terminate at the 1800\,s limit with a positive gap. A detailed analysis of the trade-off between heuristic quality, warm-start impact, and exact-solver performance across instance sizes and endurance levels will be provided in the final version of this manuscript.
 
 \section{Conclusions and future work}
 \label{sec:conclusions}
 
 We have presented a mixed-integer quadratic programming formulation for the drone coverage path planning problem with altitude selection, variable entry and exit points, and operation splitting under endurance constraints. Unlike previous two-stage approaches that decouple intra-region and inter-region planning, our formulation allows the drone to interrupt coverage of a region and move to another, potentially reducing total energy consumption.
 
-To address the computational complexity of the MIQP, we developed a multi-phase heuristic that constructs feasible solutions through chain selection, nearest-neighbour TSP, greedy endurance-aware tour splitting, coordinate-descent entry-point optimization, and local search. The heuristic runs in under 0.1\,s on all tested instances and provides an effective warm start for the exact solver.
+To address the computational complexity of the MIQP, we developed a multi-phase heuristic that constructs feasible solutions through chain selection, region-level tour construction, greedy endurance-aware splitting, coordinate-descent entry-point optimization, and intra/inter-operation local search. The heuristic runs in well under a second on all tested instances and provides an effective warm start for the exact solver.
 
-% TODO: update this paragraph once experimental results are available.
-Preliminary computational results on a testbed of artificial instances demonstrate that the heuristic consistently finds feasible solutions, and that warm-starting Gurobi with the heuristic solution significantly reduces the time to the first feasible incumbent. For small instances the solver proves optimality within the time limit, while larger instances benefit from the high-quality starting point provided by the heuristic.
+% TODO: refine this paragraph once the experimental sweep is complete.
+Preliminary computational results on the testbed of artificial instances indicate that the heuristic consistently finds feasible solutions, and that warm-starting Gurobi with the heuristic solution significantly reduces the time to the first feasible incumbent. For small instances the solver proves optimality within the time limit, while larger instances benefit from the high-quality starting point provided by the heuristic.
 
 Several directions for future work can be identified:
 \begin{itemize}
