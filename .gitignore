@@ -40,6 +40,11 @@ compare_results_edges/*
 !compare_results/*.csv
 !compare_results_edges/*.csv
 !compare_results/endurance_levels.json
+# Per-run solution JSONs (source of truth to rebuild results.csv)
+!compare_results/solutions/
+!compare_results/solutions/**
+!compare_results_edges/solutions/
+!compare_results_edges/solutions/**
 
 # Logs
 *.log
