@@ -2,10 +2,13 @@
 
 Counts edge traversals directly (no separate vertex-visitation or
 edge-coverage variables).  Degree constraints are relaxed to at-most-one
-(<= 1).  Instead of MTZ vertex-potential constraints, subtour elimination
-is enforced via Dantzig–Fulkerson–Johnson (DFJ) cut constraints separated
-lazily during branch-and-bound through a MIPSOL callback that detects
-disconnected components per operation.
+(<= 1) per operation, and a global visit-once constraint (DP6') pins each
+vertex to exactly one incoming arc across all operations -- the analogue of
+RingsModel's DP6, without which a vertex could be transited by several
+operations and the feasible set would be a strict superset of RingsModel's.
+Subtour elimination is enforced via Dantzig-Fulkerson-Johnson (DFJ) cuts
+separated lazily through MIPSOL callbacks (integral solutions) and MIPNODE
+callbacks (fractional relaxations).
 """
 
 from __future__ import annotations
@@ -193,6 +196,16 @@ class EdgesModel(RingsModel):
                 <= M_tight * (1 - self.zeta[o]),
                 name=f"DP9_o{o}")
 
+        # DP6': global visit-once -- each vertex is entered exactly once
+        # across ALL operations (analogue of RingsModel DP6).  Without it,
+        # a launch/retrieve point could be transited by another operation's
+        # path, making the feasible set a strict superset of RingsModel's.
+        for v in Vp:
+            self.model.addConstr(
+                gp.quicksum(self.x[(u, v, o)] for o in Or for u in V
+                            if u != v and (u, v, o) in self.x) == 1,
+                name=f"DP6e_{v}")
+
         # DP8: each intra edge traversed exactly once (unchanged — since
         # intra edges are directed, there is no need for a separate coverage
         # variable; the traversal variable plays that role directly.)
@@ -326,7 +339,7 @@ class EdgesModel(RingsModel):
         self.model.update()
 
     # ------------------------------------------------------------------
-    # Optimize — DFJ lazy subtour elimination via MIPSOL callback
+    # Optimize — DFJ lazy subtour elimination via MIPSOL + MIPNODE callbacks
     # ------------------------------------------------------------------
     def optimize(self, tl=3600.):
         self.model.setParam("TimeLimit", tl)
@@ -335,66 +348,114 @@ class EdgesModel(RingsModel):
         self.model.setParam("LazyConstraints", 1)
 
         first_info = [None, None]
-        all_nodes = self.all_nodes
+        cuts_added_total = [0]
         verts = self.verts
         depot = self.depot_v
         x_dict = self.x
-        zeta_dict = self.zeta
 
-        def _separate_subtours(model, where):
+        arcs_by_op = [[] for _ in range(self.O)]
+        for (u, v, o), var in x_dict.items():
+            arcs_by_op[o].append((u, v, var))
+
+        def _reach_depot(adj):
+            reached = {depot}
+            stack = [depot]
+            while stack:
+                n = stack.pop()
+                for nb in adj.get(n, ()):
+                    if nb not in reached:
+                        reached.add(nb)
+                        stack.append(nb)
+            return reached
+
+        def _component(start, adj, excluded):
+            comp = {start}
+            q = [start]
+            while q:
+                n = q.pop()
+                for nb in adj.get(n, ()):
+                    if nb not in comp and nb not in excluded:
+                        comp.add(nb)
+                        q.append(nb)
+            return comp
+
+        def _out_cut_expr(comp):
+            # Aggregate over ALL operations: a per-operation cut would be
+            # invalid globally, because a feasible alternative may visit the
+            # vertices of S within a different operation.
+            cut = gp.LinExpr()
+            for u in comp:
+                for v in self.all_nodes:
+                    if v not in comp:
+                        for o in range(self.O):
+                            if (u, v, o) in x_dict:
+                                cut += x_dict[(u, v, o)]
+            return cut
+
+        def _separate_fractional(model, arcs_by_op, cut_counter):
+            for o in range(self.O):
+                arcs = arcs_by_op[o]
+                rel = model.cbGetNodeRel([a[2] for a in arcs])
+                adj = defaultdict(set)
+                support = set()
+                for (u, v, _), val in zip(arcs, rel):
+                    if val > 1e-4:
+                        adj[u].add(v)
+                        adj[v].add(u)
+                        support.add(u)
+                        support.add(v)
+                seen = _reach_depot(adj)
+                done = set()
+                n_cuts_here = 0
+                for s in support:
+                    if s in seen or s in done:
+                        continue
+                    comp = _component(s, adj, seen | done)
+                    done |= comp
+                    if n_cuts_here >= 2:
+                        continue
+                    model.cbLazy(_out_cut_expr(comp) >= 1)
+                    cut_counter[0] += 1
+                    n_cuts_here += 1
+
+        def _separate(model, where):
             if where == GRB.Callback.MIPSOL:
-                # DFJ cut separation per active operation
-                cuts_added = False
+                any_cut = False
                 for o in range(self.O):
-                    zeta_val = model.cbGetSolution(zeta_dict[o])
-                    if zeta_val > 0.5:
-                        continue  # idle (DP9 forces all x=0)
-
-                    # Build directed adjacency for this operation
+                    if model.cbGetSolution(self.zeta[o]) > 0.5:
+                        continue
+                    arcs = arcs_by_op[o]
+                    vals = model.cbGetSolution([a[2] for a in arcs])
                     adj = defaultdict(list)
-                    for (u, v, o2), var in x_dict.items():
-                        if o2 == o and model.cbGetSolution(var) > 0.5:
+                    used = set()
+                    for (u, v, _), val in zip(arcs, vals):
+                        if val > 0.5:
                             adj[u].append(v)
-
-                    # BFS from depot to find reachable vertices
-                    reached = {depot}
-                    stack = [depot]
-                    while stack:
-                        n = stack.pop()
-                        for nb in adj.get(n, []):
-                            if nb not in reached:
-                                reached.add(nb)
-                                stack.append(nb)
-
-                    # Find subtour components (verts not reached from depot)
-                    unvisited = [v for v in verts if v not in reached]
+                            used.add(u)
+                            used.add(v)
+                    reached = _reach_depot(adj)
+                    # Only vertices actually used in THIS operation can form
+                    # a subtour; vertices assigned to other operations are
+                    # legitimately unreachable from the depot here.
+                    unvisited = [v for v in used if v not in reached]
                     while unvisited:
-                        start = unvisited[0]
-                        component = {start}
-                        q = [start]
-                        while q:
-                            n = q.pop()
-                            for nb in adj.get(n, []):
-                                if nb in all_nodes and nb not in component and nb not in reached:
-                                    component.add(nb)
-                                    q.append(nb)
-                        unvisited = [v for v in unvisited if v not in component]
-
-                        # Build DFJ cut: at least one edge must leave S
-                        cut = gp.LinExpr()
-                        for u in component:
-                            for v in all_nodes:
-                                if v not in component and (u, v, o) in x_dict:
-                                    cut += x_dict[(u, v, o)]
-                        model.cbLazy(cut >= 1)
-                        cuts_added = True
-
-                # Track first feasible incumbent (no cuts added)
-                if not cuts_added and first_info[0] is None:
+                        comp = _component(unvisited[0], adj, reached)
+                        unvisited = [v for v in unvisited if v not in comp]
+                        model.cbLazy(_out_cut_expr(comp) >= 1)
+                        cuts_added_total[0] += 1
+                        any_cut = True
+                if not any_cut and first_info[0] is None:
                     first_info[0] = model.cbGet(GRB.Callback.MIPSOL_OBJ)
                     first_info[1] = model.cbGet(GRB.Callback.RUNTIME)
 
-        self.model.optimize(callback=_separate_subtours)
+            elif where == GRB.Callback.MIPNODE:
+                try:
+                    _separate_fractional(model, arcs_by_op, cuts_added_total)
+                except Exception:
+                    pass
+
+        self.model.optimize(callback=_separate)
+        self.dfj_cuts_added = cuts_added_total[0]
         st = self.model.Status
         if self.model.SolCount == 0:
             return None

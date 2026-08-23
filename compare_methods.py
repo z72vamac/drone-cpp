@@ -343,10 +343,14 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                     status=sol_r.status or "?",
                                     n_vars=nv, n_constrs=nc))
                             else:
+                                g_st = model.model.Status
+                                label = {3: "INFEASIBLE", 4: "INF_OR_UNBD",
+                                         8: "TIME_LIMIT_NO_SOL"}.get(
+                                             g_st, "GSTATUS_%d" % g_st)
                                 emit(_row(nr, nh, seed, E, "rings",
                                           solve_time="%.2f" % elapsed,
                                           heuristic_time="%.2f" % heur_time,
-                                          status="INFEASIBLE",
+                                          status=label,
                                           n_vars=nv, n_constrs=nc))
                         except Exception as ex:
                             logger.error("  rings FAILED %s: %s",
@@ -393,9 +397,13 @@ def run_sweep(endurance_values, resume=False, time_limit=1800.0, mip_gap=0.1):
                                         status=sol_w.status or "?",
                                         n_vars=nv, n_constrs=nc))
                                 else:
+                                    g_st = model.model.Status
+                                    label = {3: "INFEASIBLE", 4: "INF_OR_UNBD",
+                                             8: "TIME_LIMIT_NO_SOL"}.get(
+                                                 g_st, "GSTATUS_%d" % g_st)
                                     emit(_row(nr, nh, seed, E, "rings_ws",
                                               solve_time="%.2f" % elapsed,
-                                              status="INFEASIBLE",
+                                              status=label,
                                               heuristic_obj="%.4f" % sol_h.objective_value,
                                               heuristic_time="%.2f" % heur_time,
                                               n_vars=nv, n_constrs=nc))

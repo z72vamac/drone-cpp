@@ -94,13 +94,15 @@ def test_edge_model_k_counts_edges_not_vertices():
 
 
 @pytest.mark.slow
-def test_edge_model_no_dp6():
+def test_edge_model_has_visit_once():
+    """DP6' global visit-once constraints exist (equivalence with RingsModel)."""
     from conftest import small_instance
     inst = small_instance()
     model = EdgesModel(inst, verbose=False)
-    for c in model.model.getConstrs():
-        assert not c.ConstrName.startswith("DP6_"), \
-            f"DP6 constraint should not exist in edge model, found {c.ConstrName}"
+    dp6e_count = sum(1 for c in model.model.getConstrs()
+                     if c.ConstrName.startswith("DP6e_"))
+    assert dp6e_count == len(model.verts), \
+        f"Expected {len(model.verts)} DP6e constraints, got {dp6e_count}"
 
 
 @pytest.mark.slow
