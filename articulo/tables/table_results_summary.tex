@@ -1,0 +1,21 @@
+\begin{table}[t]
+\centering
+\caption{Aggregated results for the Vertex-Approach (MTZ) formulation. Mean objective and solve time averaged over height levels ($n_h=1,2,3$), endurance levels ($E=300$--2400\,J) and 5 seeds. MIP gap at the 1800\,s limit. $H$ = heuristic standalone.}
+\label{tab:results-summary-rings}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{crrrrrrrr}
+\toprule
+$n_r$ & \multicolumn{2}{c}{$H$} & \multicolumn{3}{c}{$R$ (Vertex-Approach)} & \multicolumn{3}{c}{$R$+WS (Vertex-Approach+WS)} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-6} \cmidrule(lr){7-9}
+ & Obj. & Time (s) & Obj. & Time (s) & Gap (\%) & Obj. & Time (s) & Gap (\%) \\
+\midrule
+1 & 206.5 & 0.03 & 201.6 & 85.1 & 0.1 & 202.0 & 86.9 & 0.1 \\
+2 & 375.0 & 0.06 & 364.3 & 454.3 & 4.2 & 363.8 & 436.6 & 4.0 \\
+3 & 517.0 & 0.10 & 485.9 & 1088.8 & 8.0 & 485.8 & 1094.0 & 8.3 \\
+5 & 989.2 & 0.21 & 992.4 & 1790.3 & 26.0 & 943.4 & 1800.1 & 23.9 \\
+8 & 1676.2 & 0.41 & 2163.7 & 1800.2 & 49.9 & 1647.5 & 1800.2 & 37.8 \\
+10 & 2175.2 & 0.54 & 3283.6 & 1800.3 & 61.3 & 2017.2 & 1800.3 & 42.2 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

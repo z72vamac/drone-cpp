@@ -105,6 +105,53 @@ class CPPVis:
         return result
 
     @staticmethod
+    def ring_full_loop(ring: Ring, cum_entry: float) -> list:
+        """Segments of the full closed ring starting and ending at cum_entry.
+
+        Used when a LAUNCH/RETRIEVE pair coincides geometrically (lambda equal):
+        the drone enters the ring at that point, covers the whole loop and exits
+        at the same point, so the drawn path must start/end at cum_entry --
+        otherwise the rendered loop is disconnected from the vertex positions.
+        Returns 6-tuples (x1,y1,z1,x2,y2,z2), one per drawn segment.
+        """
+        def _segment_path(seg, t0, t1):
+            return (seg.start.x + t0 * (seg.end.x - seg.start.x),
+                    seg.start.y + t0 * (seg.end.y - seg.start.y),
+                    seg.start.z + t0 * (seg.end.z - seg.start.z),
+                    seg.start.x + t1 * (seg.end.x - seg.start.x),
+                    seg.start.y + t1 * (seg.end.y - seg.start.y),
+                    seg.start.z + t1 * (seg.end.z - seg.start.z))
+        n = len(ring.segments)
+        if n == 0:
+            return []
+        per = ring.perimeter
+        if cum_entry <= 1e-9 or cum_entry >= per - 1e-9:
+            idx, s0 = 0, 0.0
+        else:
+            idx, s0 = -1, 0.0
+            acc = 0.0
+            for i, seg in enumerate(ring.segments):
+                seg_len = seg.length
+                if acc <= cum_entry < acc + seg_len:
+                    idx, s0 = i, cum_entry - acc
+                    break
+                acc += seg_len
+            if idx < 0:
+                idx, s0 = n - 1, ring.segments[-1].length
+        seg = ring.segments[idx]
+        seg_len = seg.length
+        t0 = s0 / seg_len if seg_len > 0 else 0.0
+        result = []
+        if 1.0 - t0 > 1e-9:
+            result.append(_segment_path(seg, t0, 1.0))
+        for j in range(1, n):
+            s = ring.segments[(idx + j) % n]
+            result.append(_segment_path(s, 0.0, 1.0))
+        if t0 > 1e-9:
+            result.append(_segment_path(seg, 0.0, t0))
+        return result
+
+    @staticmethod
     def _draw_arrow_2d(ax, x1, y1, x2, y2, color, lw=1.5, alpha=0.85, label=None):
         mx, my = (x1 + x2) / 2, (y1 + y2) / 2
         ax.plot([x1, x2], [y1, y2], '-', color=color, lw=lw, alpha=alpha, label=label)
@@ -285,13 +332,10 @@ class CPPVis:
                         if op_idx not in legend_added:
                             legend_added.add(op_idx)
                     elif cu is not None and cv is not None and is_same_ring:
-                        full = ring_map[u].perimeter
                         if abs(cu - cv) < 1e-9:
-                            if u.vtype == VertexType.LAUNCH and v.vtype == VertexType.RETRIEVE:
-                                cu, cv = 0.0, full
-                            else:
-                                cu, cv = full, 0.0
-                        path = CPPVis._get_ring_path(ring_map[u], cu, cv)
+                            path = CPPVis.ring_full_loop(ring_map[u], cu)
+                        else:
+                            path = CPPVis._get_ring_path(ring_map[u], cu, cv)
                         for pi, (x1, y1, z1, x2, y2, z2) in enumerate(path):
                             seg_label = label if label and pi == 0 else None
                             CPPVis._draw_arrow_2d(ax, x1, y1, x2, y2,
@@ -381,13 +425,10 @@ class CPPVis:
                         if op_idx not in legend_added:
                             legend_added.add(op_idx)
                     elif cu is not None and cv is not None and is_same_ring:
-                        full = ring_map[u].perimeter
                         if abs(cu - cv) < 1e-9:
-                            if u.vtype == VertexType.LAUNCH and v.vtype == VertexType.RETRIEVE:
-                                cu, cv = 0.0, full
-                            else:
-                                cu, cv = full, 0.0
-                        path = CPPVis._get_ring_path(ring_map[u], cu, cv)
+                            path = CPPVis.ring_full_loop(ring_map[u], cu)
+                        else:
+                            path = CPPVis._get_ring_path(ring_map[u], cu, cv)
                         for pi, (x1, y1, z1, x2, y2, z2) in enumerate(path):
                             seg_label = label if label and pi == 0 else None
                             ax.plot([x1, x2], [y1, y2], [z1, z2], '-',
