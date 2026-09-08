@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon as MplPolygon
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from mpl_toolkits.mplot3d import Axes3D
+from collections import Counter
 
 from .data_structures import (
     Point3D, Ring, Region, Instance, Solution, VertexType, EdgeType, Operation
@@ -297,10 +298,18 @@ class CPPVis:
         return CPPVis.lambd_to_cum(chain, lam)
 
     @staticmethod
+    def _ring_pair_counts(solution: Solution, ring_map) -> dict:
+        """Number of ring vertices per (region, ring): 2 <=> single pair (K=1
+        semantics: a coincident launch/retrieve pair covers the full loop);
+        more <=> K>1 arcs, where coincident pairs are degenerate zero arcs."""
+        return Counter((w.region_id, solution.vertex_rings.get(w)) for w in ring_map)
+
+    @staticmethod
     def _draw_edges_2d(ax, instance: Instance, solution: Solution,
                        op_colors, sel_chain, get_cum, ring_map=None):
         if ring_map is None: ring_map = {}
         legend_added = set()
+        _ring_nv = CPPVis._ring_pair_counts(solution, ring_map)
         for op_idx, op in enumerate(solution.operations):
             for (u, v) in op.edges:
                 is_inter = CPPVis.is_inter_edge(u, v)
@@ -332,7 +341,9 @@ class CPPVis:
                         if op_idx not in legend_added:
                             legend_added.add(op_idx)
                     elif cu is not None and cv is not None and is_same_ring:
-                        if abs(cu - cv) < 1e-9:
+                        single = _ring_nv.get((u.region_id,
+                                               solution.vertex_rings.get(u)), 0) == 2
+                        if abs(cu - cv) < 1e-9 and single:
                             path = CPPVis.ring_full_loop(ring_map[u], cu)
                         else:
                             path = CPPVis._get_ring_path(ring_map[u], cu, cv)
@@ -362,6 +373,11 @@ class CPPVis:
                                   u.region_id in sel_chain)
                     if same_chain:
                         chain = sel_chain[u.region_id]
+                        # Connectors join coincident split points (zero-length
+                        # by LC5b/anchors): draw nothing, otherwise the ring
+                        # would be rendered twice.
+                        if (abs(pu.x - pv.x) < 1e-6 and abs(pu.y - pv.y) < 1e-6):
+                            continue
                         cu = CPPVis._vertex_chain_cum(u, sel_chain, solution, ring_map)
                         cv = CPPVis._vertex_chain_cum(v, sel_chain, solution, ring_map)
                         if cu is not None and cv is not None:
@@ -395,6 +411,7 @@ class CPPVis:
                        op_colors, sel_chain, get_cum, ring_map=None):
         if ring_map is None: ring_map = {}
         legend_added = set()
+        _ring_nv = CPPVis._ring_pair_counts(solution, ring_map)
         for op_idx, op in enumerate(solution.operations):
             for (u, v) in op.edges:
                 is_inter = CPPVis.is_inter_edge(u, v)
@@ -425,7 +442,9 @@ class CPPVis:
                         if op_idx not in legend_added:
                             legend_added.add(op_idx)
                     elif cu is not None and cv is not None and is_same_ring:
-                        if abs(cu - cv) < 1e-9:
+                        single = _ring_nv.get((u.region_id,
+                                               solution.vertex_rings.get(u)), 0) == 2
+                        if abs(cu - cv) < 1e-9 and single:
                             path = CPPVis.ring_full_loop(ring_map[u], cu)
                         else:
                             path = CPPVis._get_ring_path(ring_map[u], cu, cv)
@@ -455,6 +474,11 @@ class CPPVis:
                                   u.region_id in sel_chain)
                     if same_chain:
                         chain = sel_chain[u.region_id]
+                        # Connectors join coincident split points (zero-length
+                        # by LC5b/anchors): draw nothing, otherwise the ring
+                        # would be rendered twice.
+                        if (abs(pu.x - pv.x) < 1e-6 and abs(pu.y - pv.y) < 1e-6):
+                            continue
                         cu = CPPVis._vertex_chain_cum(u, sel_chain, solution, ring_map)
                         cv = CPPVis._vertex_chain_cum(v, sel_chain, solution, ring_map)
                         if cu is not None and cv is not None:

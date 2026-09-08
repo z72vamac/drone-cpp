@@ -117,7 +117,11 @@ def edge_segments(instance, solution, op_idx, u, v, sel_chain, get_cum, ring_map
                         for (x1, y1, z1, x2, y2, z2) in reversed(path)]
             segs = [(x1, y1, x2, y2) for (x1, y1, z1, x2, y2, z2) in path]
         elif cu is not None and cv is not None and is_same_ring:
-            if abs(cu - cv) < 1e-9:
+            from collections import Counter
+            _ring_nv = Counter((w.region_id, solution.vertex_rings.get(w))
+                               for w in ring_map)
+            single = _ring_nv.get((u.region_id, solution.vertex_rings.get(u)), 0) == 2
+            if abs(cu - cv) < 1e-9 and single:
                 path = CPPVis.ring_full_loop(ring_map[u], cu)
             else:
                 path = CPPVis._get_ring_path(ring_map[u], cu, cv)
@@ -137,6 +141,11 @@ def edge_segments(instance, solution, op_idx, u, v, sel_chain, get_cum, ring_map
                       and u.region_id in sel_chain)
         if same_chain:
             chain = sel_chain[u.region_id]
+            # Connectors join coincident split points (zero-length by
+            # LC5b/anchors): draw nothing, otherwise the ring would be
+            # rendered twice.
+            if (abs(pu.x - pv.x) < 1e-6 and abs(pu.y - pv.y) < 1e-6):
+                return segs
             cu = CPPVis._vertex_chain_cum(u, sel_chain, solution, ring_map)
             cv = CPPVis._vertex_chain_cum(v, sel_chain, solution, ring_map)
             if cu is not None and cv is not None:

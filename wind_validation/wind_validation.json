@@ -1,0 +1,274 @@
+[
+  {
+    "tag": "WA K=1 tight wind8",
+    "E": 104.0,
+    "K": 1,
+    "wind_aware": true,
+    "objective": 594.66,
+    "n_ops": 2,
+    "gap_pct": 1.9,
+    "time_s": 36.0,
+    "status": "OPTIMAL",
+    "n_vars": 3648,
+    "tour": [
+      [
+        [
+          1,
+          0
+        ]
+      ],
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    ]
+  },
+  {
+    "tag": "WA K=1 tight calm",
+    "E": 104.0,
+    "K": 1,
+    "wind_aware": true,
+    "objective": 594.66,
+    "n_ops": 2,
+    "gap_pct": 1.98,
+    "time_s": 54.8,
+    "status": "OPTIMAL",
+    "n_vars": 3648,
+    "tour": [
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      [
+        [
+          1,
+          0
+        ]
+      ]
+    ]
+  },
+  {
+    "tag": "WA K=1 loose wind8",
+    "E": 207.0,
+    "K": 1,
+    "wind_aware": true,
+    "objective": 500.16,
+    "n_ops": 1,
+    "gap_pct": 2.0,
+    "time_s": 42.4,
+    "status": "OPTIMAL",
+    "n_vars": 3648,
+    "tour": [
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    ]
+  },
+  {
+    "tag": "WA K=1 loose calm",
+    "E": 207.0,
+    "K": 1,
+    "wind_aware": true,
+    "objective": 500.16,
+    "n_ops": 1,
+    "gap_pct": 2.0,
+    "time_s": 38.2,
+    "status": "OPTIMAL",
+    "n_vars": 3648,
+    "tour": [
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    ]
+  },
+  {
+    "tag": "WA K=2 tight wind8",
+    "E": 104.0,
+    "K": 2,
+    "wind_aware": true,
+    "objective": 614.15,
+    "n_ops": 2,
+    "gap_pct": 51.5,
+    "time_s": 180.2,
+    "status": "SUBOPTIMAL",
+    "n_vars": 13455,
+    "tour": [
+      [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    ]
+  },
+  {
+    "tag": "unaware K=1 pseudo-tight",
+    "E": 230.0,
+    "K": 1,
+    "wind_aware": false,
+    "objective": 611.53,
+    "n_ops": 2,
+    "gap_pct": 1.97,
+    "time_s": 79.9,
+    "status": "OPTIMAL",
+    "n_vars": 3284,
+    "tour": [
+      [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    ]
+  }
+]

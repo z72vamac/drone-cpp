@@ -1,0 +1,24 @@
+[
+  {
+    "K": 2,
+    "endurance": 150.0,
+    "objective": 697.2,
+    "n_ops": 3,
+    "gap_pct": 45.74,
+    "time_s": 300.3,
+    "status": "SUBOPTIMAL",
+    "n_vars": 19092,
+    "n_constrs": 46980
+  },
+  {
+    "K": 3,
+    "endurance": 150.0,
+    "objective": 700.1,
+    "n_ops": 3,
+    "gap_pct": 62.36,
+    "time_s": 300.2,
+    "status": "SUBOPTIMAL",
+    "n_vars": 40890,
+    "n_constrs": 100677
+  }
+]

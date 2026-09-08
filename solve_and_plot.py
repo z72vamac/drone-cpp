@@ -55,6 +55,10 @@ def parse_args() -> argparse.Namespace:
                    help="Skip saving plot PNGs (useful for batch runs)")
     p.add_argument("--model", type=str, default="rings", choices=["v1", "rings"],
                    help="Model variant: v1 (spiral chain) or rings (ring-based)")
+    p.add_argument("--split-points", type=int, default=1,
+                   help="Continuous split points per ring (rings model only, default: 1)")
+    p.add_argument("--wind-aware", action="store_true", default=False,
+                   help="Use real wind-aware joule energy instead of pseudo-energy")
     p.add_argument("--num-regions", type=int, default=DEFAULT_NUM_REGIONS,
                    help=f"Number of regions (default: {DEFAULT_NUM_REGIONS})")
     p.add_argument("--num-heights", type=int, default=2,
@@ -122,7 +126,9 @@ def main() -> None:
                 inst.depot.x, inst.depot.y, inst.wind.speed_at_10m)
 
     logger.info("Building Gurobi MIQP model (%s)...", args.model)
-    model = build_model(inst, args.model, verbose=True)
+    model = build_model(inst, args.model, verbose=True,
+                        num_split_points=args.split_points,
+                        wind_aware=args.wind_aware)
     logger.info("Variables: %d  |  Constraints: %d",
                 model.model.NumVars, model.model.NumConstrs)
     model.model.setParam("MIPGap", args.mip_gap)
