@@ -153,6 +153,29 @@ class CPPVis:
         return result
 
     @staticmethod
+    def _draw_wind_2d(ax, instance: Instance):
+        """Wind direction arrow (axes-fraction coords) + speed label."""
+        w = instance.wind
+        wd = np.array([w.direction[0], w.direction[1]], dtype=float)
+        nrm = float(np.linalg.norm(wd))
+        x0, y0 = 0.06, 0.10
+        if nrm <= 0 or w.speed_at_10m <= 0:
+            ax.text(x0, y0, "wind: calm", transform=ax.transAxes, fontsize=8,
+                    color="dimgray", va="center", ha="left",
+                    bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.8))
+            return
+        wd = wd / nrm
+        L = 0.09
+        ax.annotate("", xy=(x0 + L * wd[0], y0 + L * wd[1]), xytext=(x0, y0),
+                    xycoords="axes fraction", textcoords="axes fraction",
+                    arrowprops=dict(arrowstyle="->", color="darkcyan", lw=2.0),
+                    annotation_clip=False)
+        ax.text(x0 + L * wd[0] + 0.012, y0 + L * wd[1],
+                f"wind {w.speed_at_10m:.0f} m/s", transform=ax.transAxes,
+                fontsize=8, color="darkcyan", va="center", ha="left",
+                bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray", alpha=0.8))
+
+    @staticmethod
     def _draw_arrow_2d(ax, x1, y1, x2, y2, color, lw=1.5, alpha=0.85, label=None):
         mx, my = (x1 + x2) / 2, (y1 + y2) / 2
         ax.plot([x1, x2], [y1, y2], '-', color=color, lw=lw, alpha=alpha, label=label)
@@ -543,6 +566,7 @@ class CPPVis:
         ax.set_title('Drone CPP Instance')
         ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
         ax.legend(loc='upper right', fontsize=8)
+        CPPVis._draw_wind_2d(ax, instance)
         plt.tight_layout()
         return fig
 
@@ -558,6 +582,7 @@ class CPPVis:
         ax.set_title(title or f'2D Solution (Objective: {solution.objective_value:.1f})')
         ax.set_aspect('equal'); ax.grid(True, alpha=0.3)
         ax.legend(loc='upper right', fontsize=8)
+        CPPVis._draw_wind_2d(ax, instance)
         plt.tight_layout()
         return fig
 
@@ -591,6 +616,7 @@ class CPPVis:
         ax2d.set_title(f'2D View (Objective: {solution.objective_value:.1f})')
         ax2d.set_aspect('equal'); ax2d.grid(True, alpha=0.3)
         ax2d.legend(loc='upper right', fontsize=8)
+        CPPVis._draw_wind_2d(ax2d, instance)
         CPPVis._draw_regions_3d(ax3d, instance, solution, colors, sel_chain)
         CPPVis._draw_edges_3d(ax3d, instance, solution, op_colors, sel_chain, get_cum, ring_map)
         ax3d.set_xlabel('X (m)'); ax3d.set_ylabel('Y (m)'); ax3d.set_zlabel('Z (m)')

@@ -1,0 +1,50 @@
+[
+  {
+    "tag": "WA K=1 tight",
+    "E": 173.0,
+    "objective": 677.6,
+    "n_ops": 1,
+    "visits": [
+      1
+    ],
+    "gap_pct": 2.0,
+    "time_s": 5.6,
+    "status": "OPTIMAL"
+  },
+  {
+    "tag": "WA K=1 loose",
+    "E": 346.0,
+    "objective": 677.6,
+    "n_ops": 1,
+    "visits": [
+      2
+    ],
+    "gap_pct": 1.9,
+    "time_s": 24.7,
+    "status": "OPTIMAL"
+  },
+  {
+    "tag": "WA K=2 tight",
+    "E": 173.0,
+    "objective": 652.1,
+    "n_ops": 1,
+    "visits": [
+      4
+    ],
+    "gap_pct": 9.9,
+    "time_s": 300.2,
+    "status": "SUBOPTIMAL"
+  },
+  {
+    "tag": "WA K=2 tight 2h",
+    "E": 173.0,
+    "objective": 652.09,
+    "n_ops": 1,
+    "visits": [
+      4
+    ],
+    "gap_pct": 2.0,
+    "time_s": 939.4,
+    "status": "OPTIMAL"
+  }
+]

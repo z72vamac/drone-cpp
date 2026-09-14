@@ -34,10 +34,11 @@ OUT_DIR = "demo_anim"
 LEVELS = [170, 180, 200, 220, 250, 300, 350, 400]
 
 
-def make_frames(end: int, inst, sol, out_dir: str) -> int:
+def make_frames(end, inst, sol, out_dir: str, tag: str = None) -> int:
     os.makedirs(out_dir, exist_ok=True)
     colors, op_colors, sel_chain, ring_map, cum_map, get_cum = \
         CPPVis._solution_setup(inst, sol)
+    title_base = tag or f"Demo E={end}J"
 
     plan = []  # (op_idx, seg)
     for op_idx, op in enumerate(sol.operations):
@@ -53,7 +54,7 @@ def make_frames(end: int, inst, sol, out_dir: str) -> int:
     ax.set_ylabel("Y (m)")
     ax.set_aspect("equal")
     ax.grid(True, alpha=0.3)
-    ax.set_title(f"Demo E={end}J | {len(sol.operations)} ops, "
+    ax.set_title(f"{title_base} | {len(sol.operations)} ops, "
                  f"{sol.objective_value:.1f} m — base")
     fig.savefig(f"{out_dir}/frame_{1:03d}.png", dpi=100)
     plt.close(fig)
@@ -67,7 +68,7 @@ def make_frames(end: int, inst, sol, out_dir: str) -> int:
     for k, (op_idx, (x1, y1, x2, y2)) in enumerate(plan, start=2):
         CPPVis._draw_arrow_2d(ax, x1, y1, x2, y2, op_colors[op_idx],
                               lw=1.5, alpha=0.85)
-        ax.set_title(f"Demo E={end}J | op {op_idx} | step {k - 1}/{n - 1}")
+        ax.set_title(f"{title_base} | op {op_idx} | step {k - 1}/{n - 1}")
         fig.savefig(f"{out_dir}/frame_{k:03d}.png", dpi=100)
     plt.close(fig)
     return n
@@ -89,6 +90,16 @@ def parse_args() -> argparse.Namespace:
                    help="Comma-separated endurance levels")
     p.add_argument("--split-points", type=int, default=2)
     p.add_argument("--num-ops", type=int, default=4)
+    p.add_argument("--sol", type=str, default=None,
+                   help="Single solution JSON to animate (overrides --levels). "
+                        "Use with --outdir and --tag.")
+    p.add_argument("--outdir", type=str, default=None,
+                   help="Output directory for --sol mode")
+    p.add_argument("--tag", type=str, default=None,
+                   help="Title tag for --sol mode (e.g. 'Demo wind-aware K=2 E=173J')")
+    p.add_argument("--endurance", type=float, default=None,
+                   help="Endurance for rebuilding the instance in --sol mode "
+                        "(defaults to parsing EXXXX from the filename)")
     return p.parse_args()
 
 
@@ -97,6 +108,26 @@ def main() -> None:
                         format="%(asctime)s [%(levelname)s] %(message)s")
     args = parse_args()
     os.makedirs(OUT_DIR, exist_ok=True)
+    if args.sol:
+        # single-solution mode (e.g. wind-aware demo solutions)
+        import re
+        sol_path = args.sol
+        if not os.path.exists(sol_path):
+            raise SystemExit(f"missing {sol_path}")
+        if args.endurance is None:
+            m = re.search(r"E(\d+)", os.path.basename(sol_path))
+            end = int(m.group(1)) if m else 0
+        else:
+            end = int(args.endurance)
+        out_dir = args.outdir or os.path.join(
+            OUT_DIR, os.path.splitext(os.path.basename(sol_path))[0])
+        tag = args.tag or os.path.splitext(os.path.basename(sol_path))[0]
+        inst = build_demo_instance(float(end), num_ops=args.num_ops)
+        sol = load_solution(sol_path)
+        n = make_frames(end, inst, sol, out_dir, tag=tag)
+        make_gif(out_dir, n)
+        print("FRAME_COUNTS", json.dumps({out_dir: n}))
+        return
     counts = {}
     for end in [int(e) for e in args.levels.split(",")]:
         sol_path = (f"demo_interruptions/sweep_E{end:04d}_"

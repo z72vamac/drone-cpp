@@ -1101,7 +1101,6 @@ class RingsModel(BaseModel):
         self.model.update()
 
     # ------------------------------------------------------------------
-    # Warm start from heuristic solution
     # ------------------------------------------------------------------
     # Complete all auxiliary Starts from the primary ones
     # ------------------------------------------------------------------
@@ -1353,7 +1352,14 @@ class RingsModel(BaseModel):
     # ------------------------------------------------------------------
     # Warm start from heuristic solution
     # ------------------------------------------------------------------
-    def set_warm_start(self, solution: Solution):
+    def set_warm_start(self, solution: Solution, lambda_in_meters: bool = True):
+        """Warm-start from a heuristic (or model) solution.
+
+        ``lambda_in_meters`` tells how to interpret solution.vertex_lambdas:
+        True (default) = cumulative metres along the ring (heuristic
+        convention); False = segment-index units si + gamma (model
+        convention, for identity warm starts from same-structure solutions).
+        """
         chain_sel = solution.chain_selection
         dep_v = self.depot_v
 
@@ -1374,18 +1380,24 @@ class RingsModel(BaseModel):
                 continue
             ring = rings[ri]
             lam_val = solution.vertex_lambdas.get(v, 0.0)
-            cum = [0.0]
-            for seg in ring.segments:
-                cum.append(cum[-1] + seg.length)
-            total = cum[-1]
-            if total <= 0:
-                si, gamma_val = 0, 0.0
+            ns = len(ring.segments)
+            if lambda_in_meters:
+                cum = [0.0]
+                for seg in ring.segments:
+                    cum.append(cum[-1] + seg.length)
+                total = cum[-1]
+                if total <= 0:
+                    si, gamma_val = 0, 0.0
+                else:
+                    lam_val = max(0.0, min(total, lam_val))
+                    si = next((s for s in range(ns)
+                               if cum[s] <= lam_val < cum[s + 1] or s == ns - 1), 0)
+                    seg_len = ring.segments[si].length
+                    gamma_val = 0.0 if seg_len <= 0 else (lam_val - cum[si]) / seg_len
             else:
-                lam_val = max(0.0, min(total, lam_val))
-                si = next((s for s in range(len(ring.segments))
-                           if cum[s] <= lam_val < cum[s + 1] or s == len(ring.segments) - 1), 0)
-                seg_len = ring.segments[si].length
-                gamma_val = 0.0 if seg_len <= 0 else (lam_val - cum[si]) / seg_len
+                lam_val = max(0.0, min(float(ns), lam_val))
+                si = min(max(int(lam_val), 0), ns - 1)
+                gamma_val = min(max(lam_val - si, 0.0), 1.0)
 
             # mu
             ridx, idx = v.region_id, v.idx
@@ -1456,6 +1468,7 @@ class RingsModel(BaseModel):
                     if yk in self.y:
                         self.y[yk].Start = 0.0
 
+        self._complete_starts()
         self.model.update()
 
     # ------------------------------------------------------------------

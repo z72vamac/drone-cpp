@@ -1,0 +1,54 @@
+[
+  {
+    "K": 1,
+    "objective": 677.58,
+    "n_ops": 1,
+    "visits": [
+      1
+    ],
+    "gap_pct": 1.97,
+    "time_s": 5.2,
+    "status": "OPTIMAL",
+    "first": 869.3901715823704,
+    "n_vars": 3178
+  },
+  {
+    "K": 3,
+    "objective": 630.88,
+    "n_ops": 1,
+    "visits": [
+      4
+    ],
+    "gap_pct": 13.51,
+    "time_s": 1201.1,
+    "status": "SUBOPTIMAL",
+    "first": 677.5787190155463,
+    "n_vars": 24718
+  },
+  {
+    "K": 4,
+    "objective": 621.66,
+    "n_ops": 1,
+    "visits": [
+      3
+    ],
+    "gap_pct": 13.44,
+    "time_s": 7202.2,
+    "status": "SUBOPTIMAL",
+    "first": 629.5639555295975,
+    "n_vars": 42742
+  },
+  {
+    "K": 5,
+    "objective": 624.9,
+    "n_ops": 1,
+    "visits": [
+      4
+    ],
+    "gap_pct": 13.88,
+    "time_s": 28808.8,
+    "status": "SUBOPTIMAL",
+    "first": 897.3896550247875,
+    "n_vars": 65662
+  }
+]
