@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{Best objective found vs.\ number of split points $K$ per ring. Showcase: pseudo-energy, $E=150$\,J (K=1 optimal). Demo and irregular: wind-aware real joules ($E=173$\,J and $E=153$\,J). Bold marks the best value per instance.}
+\label{tab:k-sweep}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{crrr}
+\toprule
+$K$ & Showcase ($E=150$) & Demo ($E=173$) & Irregular ($E=153$) \\
+\midrule
+1 & 708.0 & 677.6 & 776.1 \\
+2 & \textbf{697.2} & 652.1 & 582.0 \\
+3 & 700.1 & 630.9 & \textbf{559.7} \\
+4 & 708.0 & \textbf{621.7} & \textbf{559.7} \\
+5 & --- & 624.9 & 1312.0 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
