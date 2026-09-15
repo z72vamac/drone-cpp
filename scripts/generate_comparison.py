@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """Generate comparative figures and LaTeX tables for the drone CPP paper.
 
-Reads compare_results/results.csv (Vertex-Approach, complete) and
-compare_results_edges/results.csv (Edges-Approach, partial; only used in the
-default mode for the paper).
+Reads compare_results/results.csv (Vertex-Approach, complete: 540 configs)
+and compare_results_edges/results.csv (Edges-Approach, complete: 540 configs).
 
 Modes:
   default        -> articulo/pictures/compare_*.pdf + 3 tables (paper)
@@ -42,6 +41,11 @@ os.makedirs(OUT_TABLES, exist_ok=True)
 
 rings = pd.read_csv(RINGS_CSV)
 edges = pd.read_csv(EDGES_CSV)
+
+# Deduplicate re-runs (keep last) so each (config, method) counts once
+_key = ["num_regions", "num_heights", "seed", "endurance", "method"]
+rings = rings.drop_duplicates(subset=_key, keep="last").reset_index(drop=True)
+edges = edges.drop_duplicates(subset=_key, keep="last").reset_index(drop=True)
 
 for col in ["objective", "solve_time", "mip_gap", "first_incumbent_time",
             "heuristic_time", "n_vars", "n_constrs"]:
@@ -179,7 +183,7 @@ if not VERTEX_ONLY:
                 transform=ax.transAxes, va="top", fontsize=7,
                 bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8))
         ax.grid(True, linestyle="--", alpha=0.3)
-    fig.suptitle("Objective parity (equivalence check, $n_r=1,2,3,5_h1-h2$)", fontsize=10)
+    fig.suptitle("Objective parity (equivalence check, full testbed)", fontsize=10)
     fig.tight_layout()
     fig.savefig(os.path.join(OUT_PICS, "compare_objective_parity.pdf"))
     fig.savefig(os.path.join(OUT_PICS, "compare_objective_parity.png"), dpi=200)
@@ -206,7 +210,7 @@ if not VERTEX_ONLY:
         subset(edges, "edges_ws")[["num_regions", "num_heights", "seed", "endurance", "first_incumbent_time"]]
             .rename(columns={"first_incumbent_time": "t_ws"}),
         on=["num_regions", "num_heights", "seed", "endurance"], how="inner").dropna()
-    inc_series.append(("Edges-Approach", ep, C_E, "s", [1, 2, 3]))
+    inc_series.append(("Edges-Approach", ep, C_E, "s", [1, 2, 3, 5, 8, 10]))
 
 for label, df, color, marker, xs in inc_series:
     cold = [df[df["num_regions"] == nr]["t_cold"].mean() for nr in xs]
@@ -281,22 +285,24 @@ print("Wrote table_results_summary.tex")
 # Table B: vertex vs edges (only in full mode, for the paper)
 if not VERTEX_ONLY:
     rows2 = []
-    for nr in [1, 2, 3, 5]:
+    for nr in REGIONS:
         or_, tr, gr = stats(subset(rings, "rings"), nr)
         ow, tw, gw = stats(subset(rings, "rings_ws"), nr)
         oe, te, ge = stats(subset(edges, "edges"), nr)
         oew, tew, gew = stats(subset(edges, "edges_ws"), nr)
-        ne = len(subset(edges, "edges")[subset(edges, "edges")["num_regions"] == nr])
-        rows2.append((nr, or_, tr, oe, te, ow, tw, oew, tew, ne))
+        sub_e = subset(edges, "edges")
+        ne = len(sub_e[sub_e["num_regions"] == nr])
+        se = sub_e[sub_e["num_regions"] == nr]["objective"].notna().sum()
+        rows2.append((nr, or_, tr, oe, te, ow, tw, oew, tew, ne, se))
 
     with open(os.path.join(OUT_TABLES, "table_results_vertex_edge.tex"), "w", encoding="utf-8") as f:
         f.write(r"\begin{table}[t]" + "\n")
         f.write(r"\centering" + "\n")
-        f.write(r"\caption{Vertex-Approach (MTZ) vs Edges-Approach (DFJ lazy) -- direct "
-                r"comparison on the subset where both formulations were executed "
-                r"($n_r=1,2,3$ fully, $n_r=5$ partially: 191/270 configs, $n_h=1,2$). "
-                r"Means over the executed $(n_h,E,\text{seed})$ combos. Edges-Approach "
-                r"results after pull: 1001 runs (334 configs).}" + "\n")
+        f.write(r"\caption{Vertex-Approach (MTZ) vs Edges-Approach (DFJ lazy) on the full "
+                r"testbed: 90 configs per $n_r$ ($n_h \times E \times$ seeds), 1620 runs per "
+                r"formulation. Objective/time are means over runs that produced a solution; "
+                r"$n$ = solved/total runs for cold Edges-Approach (it finds no solution "
+                r"within 1800\,s on most $n_r\ge5$ configs).}" + "\n")
         f.write(r"\label{tab:results-vertex-edge}" + "\n")
         f.write(r"\resizebox{\textwidth}{!}{%" + "\n")
         f.write(r"\begin{tabular}{crrrrrrrrrr}" + "\n")
@@ -305,11 +311,11 @@ if not VERTEX_ONLY:
                 r"& \multicolumn{2}{c}{Vertex-Approach+WS} & \multicolumn{2}{c}{Edges-Approach+WS} "
                 r"& $n$ (Edges-Approach)\\" + "\n")
         f.write(r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}" + "\n")
-        f.write(r" & Obj. & Time & Obj. & Time & Obj. & Time & Obj. & Time & configs \\" + "\n")
+        f.write(r" & Obj. & Time & Obj. & Time & Obj. & Time & Obj. & Time & solved \\" + "\n")
         f.write(r"\midrule" + "\n")
-        for nr, or_, tr, oe, te, ow, tw, oew, tew, ne in rows2:
+        for nr, or_, tr, oe, te, ow, tw, oew, tew, ne, se in rows2:
             f.write(f"{nr} & {fmt(or_,1)} & {fmt(tr,1)} & {fmt(oe,1)} & {fmt(te,1)} "
-                    f"& {fmt(ow,1)} & {fmt(tw,1)} & {fmt(oew,1)} & {fmt(tew,1)} & {ne} \\\\\n")
+                    f"& {fmt(ow,1)} & {fmt(tw,1)} & {fmt(oew,1)} & {fmt(tew,1)} & {se}/{ne} \\\\\n")
         f.write(r"\bottomrule" + "\n")
         f.write(r"\end{tabular}%" + "\n")
         f.write(r"}" + "\n")

@@ -852,7 +852,7 @@ The heuristic solver (standalone) uses the parameters listed in Table~\ref{tab:h
 \subsection{Results}
 \label{sec:results}
 
-We report for each instance the objective value, solve time, and MIP gap (when available) for all three methods. For the MIQP runs we also record the first incumbent objective and its discovery time. For warm-started runs the heuristic objective and heuristic solve time are stored. After the pull of 31~Aug~2026 the vertex-based sweep is complete (540 configs $\times$ 3 methods = 1620 runs, 1703 rows including heuristic, Gurobi 11.0, TL=1800\,s, MIPGap=0); the edge-based sweep is partial (334 configs, 1001 runs, $n_r=1,2,3$ fully and $n_r=5$ partially with $h=1,2$, see Table~\ref{tab:results-vertex-edge}). All figures and tables below are generated from \texttt{compare\_results/results.csv} and \texttt{compare\_results\_edges/results.csv}.
+We report for each instance the objective value, solve time, and MIP gap (when available) for all three methods. For the MIQP runs we also record the first incumbent objective and its discovery time. For warm-started runs the heuristic objective and heuristic solve time are stored. Both sweeps are complete on the full testbed (540 configs $\times$ 3 methods = 1620 runs each: heuristic, exact, exact warm-started; Gurobi 11.0, TL=1800\,s, MIPGap=0; duplicate re-runs in the vertex log are deduplicated keeping the last row). All figures and tables below are generated from \texttt{compare\_results/results.csv} and \texttt{compare\_results\_edges/results.csv}.
 
 \input{tables/table_results_summary}
 \input{tables/table_results_vertex_edge}
@@ -861,7 +861,7 @@ We report for each instance the objective value, solve time, and MIP gap (when a
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.85\linewidth]{pictures/compare_time_by_regions.pdf}
-  \caption{Mean solve time (log scale) vs.\ number of regions $n_r$, averaged over $n_h$, $E$ and seeds. Vertex-based (Vertex-Approach, MTZ) vs.\ edge-based (Edges-Approach, DFJ lazy) with and without warm-start, plus heuristic. Edge results are partial: $n_r=8,10$ not yet executed.}
+  \caption{Mean solve time (log scale) vs.\ number of regions $n_r$, averaged over $n_h$, $E$ and seeds. Vertex-based (Vertex-Approach, MTZ) vs.\ edge-based (Edges-Approach, DFJ lazy) with and without warm-start, plus heuristic, on the full testbed.}
   \label{fig:compare-time}
 \end{figure}
 
@@ -875,7 +875,7 @@ We report for each instance the objective value, solve time, and MIP gap (when a
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.95\linewidth]{pictures/compare_objective_parity.pdf}
-  \caption{Objective parity check: Vertex-Approach (MTZ) vs.\ Edges-Approach (DFJ) on the 325 (cold) / 357 (warm) configs where both formulations finished. Diagonal = equivalence. Mean ratio Edges-Approach/Vertex-Approach = 1.021 (cold) and 1.002 (warm), confirming the two MIQPs are equivalent up to solver variability and time-limit effects; warm-start closes the residual gap.}
+  \caption{Objective parity check: Vertex-Approach (MTZ) vs.\ Edges-Approach (DFJ) on the 311 (cold) / 528 (warm) configs where both formulations produced a solution. Diagonal = equivalence. Mean ratio Edges-Approach/Vertex-Approach = 1.023 (cold) and 1.003 (warm), confirming the two MIQPs are equivalent up to solver variability and time-limit effects; warm-start closes the residual gap.}
   \label{fig:compare-parity}
 \end{figure}
 
@@ -889,7 +889,7 @@ We report for each instance the objective value, solve time, and MIP gap (when a
 \subsection{Discussion}
 \label{sec:discussion}
 
-The aggregated results (Tables~\ref{tab:results-summary-rings}--\ref{tab:results-vertex-edge} and Figs.~\ref{fig:compare-time}--\ref{fig:compare-incumbent}) confirm three patterns. First, the heuristic is consistently feasible in $<0.6$\,s (mean 0.03\,s for $n_r=1$ up to 0.54\,s for $n_r=10$) and its objective is within 2--8\% of the exact solver on small instances where optimality is proven. Second, warm-starting (R+WS, E+WS) reduces the mean time to the first feasible incumbent by one to two orders of magnitude, especially for tight endurances (Fig.~\ref{fig:compare-incumbent}); for $n_r=10$ the mean MIP gap drops from 61.3\% (R) to 42.2\% (R+WS) at the 1800\,s limit. Third, on the 325/357 configs where both formulations were executed, Vertex-Approach and Edges-Approach are equivalent in objective (mean ratio 1.02 cold, 1.00 warm, Fig.~\ref{fig:compare-parity}); the edge-based model uses $\approx$2--5\% fewer variables but incurs DFJ lazy-cut overhead, so its mean solve time is comparable or slightly higher on $n_r\le3$ (Fig.~\ref{fig:compare-time}). For $n_r=5$ the edge-based sweep is still partial (191/270 configs, only $h=1,2$), and for $n_r=8,10$ no edge results are available yet; completing the sweep will allow a definitive scalability comparison.
+The aggregated results (Tables~\ref{tab:results-summary-rings}--\ref{tab:results-vertex-edge} and Figs.~\ref{fig:compare-time}--\ref{fig:compare-incumbent}) confirm three patterns. First, the heuristic is consistently feasible in $<0.6$\,s (mean 0.03\,s for $n_r=1$ up to 0.54\,s for $n_r=10$) and its objective is within 2--8\% of the exact solver on small instances where optimality is proven. Second, warm-starting (R+WS, E+WS) reduces the mean time to the first feasible incumbent by one to two orders of magnitude, especially for tight endurances (Fig.~\ref{fig:compare-incumbent}); the effect is strongest for the edge-based formulation, whose cold runs need 45\,s ($n_r=2$) to 1101\,s ($n_r=10$) for the first incumbent against 0.00\,s and 7.7\,s warm-started. For $n_r=10$ the mean MIP gap drops from 61.3\% (R) to 42.2\% (R+WS) at the 1800\,s limit. Third, on the 311/528 configs where both formulations produced a solution, Vertex-Approach and Edges-Approach are equivalent in objective (mean ratio 1.023 cold, 1.003 warm, Fig.~\ref{fig:compare-parity}); with warm-start the two formulations agree within 1\% even on the largest instances ($n_r=8$: 1649.5 vs.\ 1647.5; $n_r=10$: 2032.6 vs.\ 2017.2). The edge-based model uses $\approx$2--5\% fewer variables but incurs DFJ lazy-cut overhead: it is markedly slower without warm-start on small instances (172.6\,s vs.\ 85.1\,s at $n_r=1$; 872.5\,s vs.\ 454.3\,s at $n_r=2$), while on large instances both hit the time limit. A caveat is in order: cold Edges-Approach finds no solution within 1800\,s on most $n_r\ge5$ configs (only 11/90 solved at $n_r=8$ and 2/90 at $n_r=10$), so its cold means on large instances are computed over the easiest subset; warm-starting restores feasibility almost everywhere (only 9 unsolved runs in total).
 
 Table~\ref{tab:results-by-endurance} isolates the endurance effect for $n_r=3$: with $E=300$\,J the mean total distance is 525\,m and strictly decreases to 474\,m at $E\ge600$\,J, reflecting fewer depot returns; beyond 600\,J the curves flatten, indicating that the instance becomes endurance-unconstrained for that size. The gap pattern is non-monotonic in $E$ because tight $E$ yields many small operations that are easier to sequence, while intermediate $E$ creates harder packing decisions.
 
@@ -900,7 +900,7 @@ We have presented a mixed-integer quadratic programming formulation for the dron
 
 To address the computational complexity of the MIQP, we developed a multi-phase heuristic that constructs feasible solutions through chain selection, region-level tour construction, greedy endurance-aware splitting, coordinate-descent entry-point optimization, and intra/inter-operation local search. The heuristic runs in well under a second on all tested instances and provides an effective warm start for the exact solver.
 
-On the completed vertex-based sweep (540 configs) the heuristic is always feasible and warm-starting consistently improves both time-to-first-incumbent and final gap; the edge-based formulation shows equivalent solution quality on the subset executed so far (mean warm ratio 1.002) and will be fully benchmarked once the $n_r=5,8,10$ sweeps complete.
+On the completed vertex-based sweep (540 configs) the heuristic is always feasible and warm-starting consistently improves both time-to-first-incumbent and final gap; the edge-based formulation, now also benchmarked on the full 540-config testbed, shows equivalent solution quality (mean warm ratio 1.003, agreement within 1\% on the largest instances) at the price of slower cold starts and weaker primal performance without warm-start on large instances.
 
 Several directions for future work can be identified:
 \begin{itemize}
@@ -908,7 +908,7 @@ Several directions for future work can be identified:
     \item Incorporating dynamic wind fields and time-varying energy consumption into the formulation;
     \item Developing more sophisticated metaheuristics (e.g.\ variable neighbourhood search, large neighbourhood search) to improve solution quality further;
     \item Validating the approach on realistic instances derived from actual aerial survey or precision agriculture missions;
-    \item Performing a detailed computational comparison of the vertex-based and edge-based formulations to assess their relative strengths on larger instance classes.
+    \item Performing a polyhedral comparison of the MTZ and DFJ lazy relaxations to explain the primal strength of the edge-based formulation on large instances.
 \end{itemize}
 
 \newpage

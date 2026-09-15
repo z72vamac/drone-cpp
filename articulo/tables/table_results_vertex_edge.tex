@@ -1,18 +1,20 @@
 \begin{table}[t]
 \centering
-\caption{Vertex-Approach (MTZ) vs Edges-Approach (DFJ lazy) -- direct comparison on the subset where both formulations were executed ($n_r=1,2,3$ fully, $n_r=5$ partially: 191/270 configs, $n_h=1,2$). Means over the executed $(n_h,E,\text{seed})$ combos. Edges-Approach results after pull: 1001 runs (334 configs).}
+\caption{Vertex-Approach (MTZ) vs Edges-Approach (DFJ lazy) on the full testbed: 90 configs per $n_r$ ($n_h \times E \times$ seeds), 1620 runs per formulation. Objective/time are means over runs that produced a solution; $n$ = solved/total runs for cold Edges-Approach (it finds no solution within 1800\,s on most $n_r\ge5$ configs).}
 \label{tab:results-vertex-edge}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{crrrrrrrrrr}
 \toprule
 $n_r$ & \multicolumn{2}{c}{Vertex-Approach} & \multicolumn{2}{c}{Edges-Approach} & \multicolumn{2}{c}{Vertex-Approach+WS} & \multicolumn{2}{c}{Edges-Approach+WS} & $n$ (Edges-Approach)\\
 \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
- & Obj. & Time & Obj. & Time & Obj. & Time & Obj. & Time & configs \\
+ & Obj. & Time & Obj. & Time & Obj. & Time & Obj. & Time & solved \\
 \midrule
-1 & 201.6 & 85.1 & 210.1 & 172.6 & 202.0 & 86.9 & 210.1 & 165.7 & 90 \\
-2 & 364.3 & 454.3 & 364.1 & 872.5 & 363.8 & 436.6 & 363.8 & 833.4 & 90 \\
-3 & 485.9 & 1088.8 & 490.7 & 1380.8 & 485.8 & 1094.0 & 487.3 & 1406.4 & 90 \\
-5 & 992.4 & 1790.3 & 830.6 & 1802.7 & 943.4 & 1800.1 & 860.6 & 1802.1 & 64 \\
+1 & 210.1 & 111.5 & 210.1 & 172.6 & 210.4 & 112.9 & 210.1 & 165.7 & 89/90 \\
+2 & 364.3 & 454.3 & 364.1 & 872.5 & 363.8 & 436.6 & 363.8 & 833.4 & 88/90 \\
+3 & 485.9 & 1088.8 & 490.7 & 1380.8 & 485.8 & 1094.0 & 487.3 & 1406.4 & 81/90 \\
+5 & 992.4 & 1790.3 & 832.7 & 1803.4 & 943.4 & 1800.1 & 952.9 & 1801.7 & 40/90 \\
+8 & 2163.7 & 1800.2 & 1094.0 & 1806.5 & 1647.5 & 1800.2 & 1649.5 & 1801.9 & 11/90 \\
+10 & 3283.6 & 1800.3 & 1170.9 & 1805.1 & 2017.2 & 1800.3 & 2032.6 & 1802.5 & 2/90 \\
 \bottomrule
 \end{tabular}%
 }
