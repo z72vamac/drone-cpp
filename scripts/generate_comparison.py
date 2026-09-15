@@ -361,54 +361,8 @@ with open(os.path.join(OUT_TABLES, "table_results_by_endurance.tex"), "w", encod
     f.write(r"\end{table}" + "\n")
 print("Wrote table_results_by_endurance.tex")
 
-# ---------------------------------------------------------------------------
-# 5) Performance profiles, Dolan-More (objective ratio to best)
-#    Unsolved runs count as infinite ratio: curves plateau at the fraction
-#    of configs solved, so robustness and quality are shown jointly.
-# ---------------------------------------------------------------------------
-if not VERTEX_ONLY:
-    def _perf_pair(method_r, method_e):
-        a = subset(rings, method_r)[["num_regions", "num_heights", "seed",
-                                     "endurance", "objective"]].rename(columns={"objective": "o1"})
-        b = subset(edges, method_e)[["num_regions", "num_heights", "seed",
-                                     "endurance", "objective"]].rename(columns={"objective": "o2"})
-        m = pd.merge(a, b, on=["num_regions", "num_heights", "seed", "endurance"],
-                     how="inner")
-        m = m[~(m.o1.isna() & m.o2.isna())].copy()
-        best = m[["o1", "o2"]].min(axis=1)
-        m["r1"] = np.where(m.o1.isna(), np.inf, m.o1 / best)
-        m["r2"] = np.where(m.o2.isna(), np.inf, m.o2 / best)
-        return m
-
-    fig, axes = plt.subplots(1, 2, figsize=(6.4, 3.2), sharey=True)
-    taus = np.concatenate([[1.0], np.logspace(np.log10(1.001), np.log10(2.0), 60)])
-    for ax, (mr, me, title) in zip(
-            axes,
-            [("rings", "edges", "Cold start"),
-             ("rings_ws", "edges_ws", "Warm-started")]):
-        m = _perf_pair(mr, me)
-        for col, label, color in [("r1", "Vertex-Approach", C_V),
-                                  ("r2", "Edges-Approach", C_E)]:
-            frac = [(m[col] <= t).mean() for t in taus]
-            solved = (m[col] < np.inf).mean()
-            ax.plot(taus, frac, label=f"{label} ({solved:.0%})",
-                    color=color, linewidth=1.8)
-        ax.set_xscale("log")
-        ax.set_xlim(1.0, 2.0)
-        ax.set_ylim(0.0, 1.02)
-        ax.set_xlabel(r"$\tau$ (ratio to best objective)")
-        ax.set_title(title)
-        ax.grid(True, linestyle="--", alpha=0.3, which="both")
-    axes[0].set_ylabel("Fraction of configs with ratio $\\leq\\tau$")
-    axes[0].legend(fontsize=7, loc="lower right")
-    fig.suptitle("Performance profiles: objective quality + robustness", fontsize=10)
-    fig.tight_layout()
-    fig.savefig(os.path.join(OUT_PICS, "compare_perfprofile.pdf"))
-    fig.savefig(os.path.join(OUT_PICS, "compare_perfprofile.png"), dpi=200)
-    print("Saved compare_perfprofile")
-
     # -----------------------------------------------------------------------
-    # 6) MIP-gap CDF (unsolved runs count as 100% gap)
+    # 5) MIP-gap CDF (unsolved runs count as 100% gap)
     # -----------------------------------------------------------------------
     fig, ax = plt.subplots(figsize=(6.2, 3.4))
     taus = np.linspace(0, 1.0, 101)
