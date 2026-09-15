@@ -1,0 +1,5 @@
+# K-battery server requirements (Gurobi needs a license: set GRB_LICENSE_FILE
+# or place gurobi.lic in the working directory / home; this file is git-ignored)
+gurobipy>=11.0
+numpy
+matplotlib
