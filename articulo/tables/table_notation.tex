@@ -1,0 +1,27 @@
+\begin{table}[t]
+\centering
+\caption{Main notation. Decision variables are detailed in Tables~\ref{table:variables1}--\ref{table:variables2}; constraint families Loc-C, Path-C, Dist-C, Ener-C, Dep-C, End-C, VI-C, S-C and W-C are defined in Sections~\ref{sec:formulation}--\ref{sec:windaware}.}
+\label{tab:notation}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+\multicolumn{2}{l}{\textit{Sets and indices}} \\
+$\mathcal R$, $R=|\mathcal R|$ & regions and their number; $r,r'$ index regions \\
+$\mathcal T_r$, $\mathcal S_t$ & candidate chains of $r$ ($t$ index) and segments of $t$ ($s$ index) \\
+$\mathcal I_r$ & candidate entry/exit points of $r$ ($2R$ per region) \\
+$\mathcal G=(\mathcal V,\mathcal E)$ & flight graph; $v_0$ depot, $\mathcal V'$ region vertices \\
+$\mathcal E^{int}$, $\mathcal E^{ext}$ & intra-region (chain) edges and inter-region legs \\
+$\mathcal O$ & operations (depot tours); $o$ index \\
+\multicolumn{2}{l}{\textit{Parameters}} \\
+$h_t$, $\rho_h$, $\vec\nu_h^w$ & chain altitude, air density, wind velocity at height $h$ \\
+$L(s)$, $Q^s$ & length and endpoints of chain segment $s$ \\
+$W^{\max}$ & endurance (energy) budget per operation \\
+\multicolumn{2}{l}{\textit{Key decision variables}} \\
+$\alpha_t$ & 1 if chain $t$ is selected \\
+$x_{vv'}^o$, $y_v^o$, $\zeta^o$ & traversal, visitation and idle-operation indicators \\
+$\lambda_v$, $\gamma_v$, $\mu_v^{ts}$ & chain position, in-segment offset, segment assignment \\
+$d_{uv}$, $w_{uv}$, $\ell_{uv}^o$ & distance, energy and per-operation linearized cost \\
+\bottomrule
+\end{tabular}
+\end{table}

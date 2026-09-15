@@ -374,10 +374,10 @@
       {\small Endurance (big-$M$):}
       {\footnotesize
       \begin{align*}
-        \ell_{uv}^o &\le x_{uv}^oM \tag{End-Lin$_1$}\\
-        \ell_{uv}^o &\le w_{uv} \tag{End-Lin$_2$}\\
-        \ell_{uv}^o &\ge w_{uv}-(1-x_{uv}^o)M \tag{End-Lin$_3$}\\
-        \ell_{uv}^o &\ge 0 \tag{End-Lin$_4$}\\
+        \ell_{uv}^o &\le x_{uv}^oM \tag{End-C$_1$}\\
+        \ell_{uv}^o &\le w_{uv} \tag{End-C$_2$}\\
+        \ell_{uv}^o &\ge w_{uv}-(1-x_{uv}^o)M \tag{End-C$_3$}\\
+        \ell_{uv}^o &\ge 0 \tag{End-C$_4$}\\
         \sum_{u,v}\ell_{uv}^o &\le W^{\max}\;\;\forall o \tag{Endurance}
       \end{align*}}
       {\scriptsize $\ell_{uv}^o$ linearises $x_{uv}^o w_{uv}$.}
@@ -638,7 +638,7 @@
       {\small Contributions:}
       \begin{enumerate}
         \item MIQP with \textbf{preemption + altitude + endurance} in one model (SOC + big-$M$), one family per slide
-        \item Equivalent \textbf{edge-based} DFJ reformulation
+        \item Equivalent \textbf{Edges-Approach} DFJ reformulation
         \item Multi-phase heuristic $<0.6$\,s that \textbf{warm-starts} the exact solver
         \item Mean-based results on the full 540-config Vertex-Approach sweep
       \end{enumerate}
