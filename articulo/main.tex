@@ -199,7 +199,7 @@ $$
 \vec{\nu}_h^d = \vec{\nu} - \vec{\nu}_h^w.
 $$
 
-\noindent Because the drone's position and the chosen chain are decision variables, the actual flight speed along an inter-region leg is unknown before the model is solved. To avoid bilinear terms, we approximate the direction of an inter-region leg $(r,r')$ by the unit vector from the centroid of $r$ to the centroid of $r'$, giving a pre-computable ground speed $\vec\nu_{rr'h}^d$ (and hence energy) per region pair. The exact leg directions are recovered through the continuous position variables in the formulation.
+\noindent Because the drone's position and the chosen chain are decision variables, the actual flight speed along an inter-region leg is unknown before the model is solved. To avoid bilinear terms, we approximate the direction of an inter-region leg $(r,r')$ by the unit vector from the centroid of $r$ to the centroid of $r'$, giving a precomputable ground speed $\vec\nu_{rr'h}^d$ (and hence energy) per region pair. The exact leg directions are recovered through the continuous position variables in the formulation.
 
 One key feature of our problem setting is that the drone is not forced to fully explore one region before moving to another one. The edge set $\mathcal E^{ext}$ allows the drone to leave a region before completing its coverage and explore a different one. Other CPP contributions propose a two-stage approach, in which each region is fully covered first and then an inter-region routing problem is solved; this restriction can be suboptimal, as illustrated by the following example.
 
@@ -231,7 +231,7 @@ Table~\ref{tab:notation} collects the notation used throughout the model. Constr
 
 \subsection{Location constraints}
 
-\emph{Idea.} The entry/exit vertices are not fixed waypoints: each vertex $v=(r,i)$ floats along the coverage chains of its region, and the model must decide (a) \emph{which} chain (altitude) it lies on and (b) \emph{where} on that chain it sits. We encode (a) with a one-hot chain selector $\alpha_t$ and a segment assignment $\mu_v^{ts}$, and (b) with a continuous in-segment offset $\gamma_v\in[0,1]$; a single curvilinear coordinate $\lambda_v$ then orders all vertices along the chain (Fig.~\ref{fig:parameterization}). The constraints below build this positioning in three steps: coordinates from assignment (Loc-C$_1$), one chain per region (Loc-C$_2$--C$_3$), and the $\lambda$ ordering with endpoint fixing (Loc-C$_4$--C$_8$).
+The entry and exit vertices are not fixed waypoints. Each vertex $v=(r,i)$ floats along the coverage chains of its region, so the model must decide two things for every vertex: (a) \emph{which} chain (altitude) it lies on and (b) \emph{where} on that chain it sits. We encode (a) with a one-hot chain selector $\alpha_t$ and a segment assignment $\mu_v^{ts}$, and (b) with a continuous in-segment offset $\gamma_v\in[0,1]$; a single curvilinear coordinate $\lambda_v$ then orders all vertices along the chain (Fig.~\ref{fig:parameterization}). The constraints below build this positioning in three steps: coordinates from assignment (Loc-C$_1$), one chain per region (Loc-C$_2$--C$_3$), and the $\lambda$ ordering with endpoint fixing (Loc-C$_4$--C$_8$).
 
 For each vertex $v=(r,i)\in\mathcal V'$ we define its spatial coordinates $P_v=(P_v^x,P_v^y,P_v^z)\in\mathbb R^3$. Let $\mu_v^{ts}$ be a binary variable that is one if vertex $v$ is placed on segment $s$ of chain $t$, and let $\gamma_v\in[0,1]$ denote the relative position within that segment. The product $\gamma_v\cdot\mu_v^{ts}$ is linearized via the auxiliary continuous variable $\eta_v^{ts}$, constrained by standard Fortet inequalities ($0\le\eta_v^{ts}\le\mu_v^{ts}$, $\gamma_v-(1-\mu_v^{ts})\le\eta_v^{ts}\le\gamma_v$). The coordinates of $v$ are then given by:
 
@@ -297,9 +297,7 @@ Constraint~\eqref{eq:location_4} defines $\lambda_v$ as the cumulative length fr
 \end{figure}
 
 \subsection{Drone path constraints}
-\emph{Idea.} Once vertices have positions, the drone must string them into depot tours: each operation $o$ is a closed walk starting and ending at $v_0$ that visits a subset of vertices, every vertex is visited exactly once across all operations, and no tour contains a cycle detached from the depot. We model this with traversal variables $x_{vv'}^o$ (which legs are flown in which operation) and visitation variables $y_v^o$ derived from them; flow conservation (Path-C$_2$) plus depot departure/arrival (Path-C$_1$, Path-C$_3$) shape each operation, while Miller--Tucker--Zemlin ordering variables $u_v^o$ (Path-C$_7$) rule out subtours. Operations are allowed to be idle once everything is covered, via the flag $\zeta^o$.
-
-In this subsection, we describe the set of constraints related to the operations that the drone must perform to visit all vertices described in $\mathcal V'$. In this context, we define several families of variables that model the path. Let $x_{vv'}^o$ be a binary variable that is one if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. Let $y_v^o$ be a binary variable that is one if the vertex $v$ is visited during the operation $o$. Let also $\zeta^o$ be a binary variable that is one if all vertices are visited before starting the operation $o$. We count the number of vertices visited in operation $o$ by means of the integer variable $k^o$. Additionally, $u_v^o$ is a continuous variable that represents the position of vertex $v$ in the tour of operation $o$, used in the subtour elimination constraints.
+With vertex positions established, the next block strings vertices into depot tours. Each operation $o$ is a closed walk starting and ending at $v_0$ that visits a subset of vertices, every vertex is visited exactly once across all operations, and no tour contains a cycle detached from the depot. We model this with traversal variables $x_{vv'}^o$ (which legs are flown in which operation) and visitation variables $y_v^o$ derived from them; flow conservation (Path-C$_2$) plus depot departure/arrival (Path-C$_1$, Path-C$_3$) shape each operation, while Miller--Tucker--Zemlin ordering variables $u_v^o$ (Path-C$_7$) rule out subtours. Operations are allowed to be idle once everything is covered, via the flag $\zeta^o$. The variables modeling the path are as follows. Let $x_{vv'}^o$ be a binary variable that is one if the drone goes from vertex $v$ to vertex $v'$ in operation $o$. Let $y_v^o$ be a binary variable that is one if the vertex $v$ is visited during the operation $o$. Let also $\zeta^o$ be a binary variable that is one if all vertices are visited before starting the operation $o$. We count the number of vertices visited in operation $o$ by means of the integer variable $k^o$. Additionally, $u_v^o$ is a continuous variable that represents the position of vertex $v$ in the tour of operation $o$, used in the subtour elimination constraints.
 
 \begin{align*}
 \sum_{v'\in \mathcal V} x_{v_0v'}^{o}&=1-\zeta^o,&\quad \forall o\in\mathcal O,\label{eq:drone_path_1}\tag{Path-C$_1$}\\
@@ -316,9 +314,7 @@ Constraints \eqref{eq:drone_path_1} ensure that the drone exits from the depot i
 guarantee that each polygonal chain is completely traversed by requiring that all edges of the path graph associated with each region are traversed in some operation.
 
 \subsubsection*{Valid Inequalities}
-\emph{Idea.} The path constraints above admit many symmetric solutions (e.g.\ permuting idle operations) that slow down branch-and-bound without changing the optimum. The inequalities VI-C$_1$--C$_4$ cut off such fractional and symmetric solutions: they force idle operations to come last, count how many vertices each operation covers, and tie that count to the idle flag so the relaxation ``sees'' that an active operation must do useful work.
-
-In this subsection, we present a set of valid inequalities for the representation of the drone path that are included in the formulation to enhance it. Let $\zeta^o$ be a binary variable that takes the value of one if all vertices have been visited before starting the operation $o$, and zero otherwise. If this is the case, then all vertices must also be visited before the operation $o+1$. Therefore, the $\zeta$ variables must satisfy the following monotonicity constraint:
+The path constraints above admit many symmetric solutions (e.g.\ permuting idle operations) that slow down branch-and-bound without changing the optimum. To tighten the relaxation, the inequalities VI-C$_1$--C$_4$ cut off such fractional and symmetric solutions: they force idle operations to come last, count how many vertices each operation covers, and tie that count to the idle flag so the relaxation ``sees'' that an active operation must do useful work. Concretely, let $\zeta^o$ be a binary variable that takes the value of one if all vertices have been visited before starting the operation $o$, and zero otherwise. If this is the case, then all vertices must also be visited before the operation $o+1$. Therefore, the $\zeta$ variables must satisfy the following monotonicity constraint:
 
 \begin{equation}\label{eq:mon}\tag{VI-C$_1$}
 \zeta^o\leq \zeta^{o+1},\quad\forall o\in\mathcal O\setminus\{O\}.
@@ -345,9 +341,7 @@ k^o\geq 1-\zeta^o,\quad\forall o\in\mathcal O.
 
 \subsection{Distance constraints}
 
-\emph{Idea.} Routing needs leg lengths, but vertex positions are variables, so distances cannot be precomputed---except along a chain, where the $\lambda$ ordering makes them trivial. The trick is therefore twofold: on intra-region edges read the length off an accumulated-distance variable $dfs_v$ (a difference of two such variables, Dist-C$_1$--C$_2$), and on inter-region legs introduce explicit distance variables bounded below by the Euclidean norm via a second-order cone (Dist-C$_3$--C$_6$). Since the objective minimizes total length, each ``$\ge$'' bound is tight at optimality.
-
-Since vertex positions are decision variables, all distances must be expressed through continuous variables. We first consider pairs of vertices belonging to the same region, then pairs in different regions.
+Routing needs leg lengths, but vertex positions are variables, so distances cannot be precomputed---except along a chain, where the $\lambda$ ordering makes them trivial. The construction is therefore twofold: on intra-region edges the length is read off an accumulated-distance variable $dfs_v$ (a difference of two such variables, Dist-C$_1$--C$_2$), and on inter-region legs explicit distance variables are bounded below by the Euclidean norm via a second-order cone (Dist-C$_3$--C$_6$). Since the objective minimizes total length, each ``$\ge$'' bound is tight at optimality. We consider first pairs of vertices belonging to the same region, then pairs in different regions.
 
 \paragraph{Intra-region distances.}
 For each region $r$, the polygonal chain $t$ is composed of segments $\mathcal S_t$ of known lengths $L(s)=\|Q^{s+1}-Q^s\|_2$. Rather than introducing bilinear products $\mu_v^s\mu_{v'}^{s'}$, we define an auxiliary continuous variable $dfs_v$ that accumulates the distance from the start of the chain to vertex $v$:
@@ -391,7 +385,7 @@ Constraint~\eqref{eq:dist_ext_xy} is a second-order cone constraint that compute
 
 \subsection{Consumption constraints}
 
-The energy consumed by the drone is modelled using the drag formula $w = \tfrac12 A c\,\rho\,\nu\,d$, where $A$ is the frontal area, $c$ the drag coefficient, $\rho$ the air density, $\nu$ the drone speed, and $d$ the travelled distance. We define the constants $E^{xy}=E^{z}=\tfrac12 cA$ for brevity. \emph{Units:} throughout Sections~\ref{sec:formulation}--\ref{sec:splitpoints} energy is measured in the model's nominal units (drag constants at cruise speed, calm air), which we write as pseudo-joules to distinguish them from the real joules of the wind-aware extension in Section~\ref{sec:windaware}. As with distances, we treat intra-region and inter-region pairs separately.
+The energy consumed by the drone is modeled using the drag formula $w = \tfrac12 A c\,\rho\,\nu\,d$, where $A$ is the frontal area, $c$ the drag coefficient, $\rho$ the air density, $\nu$ the drone speed, and $d$ the travelled distance. We define the constants $E^{xy}=E^{z}=\tfrac12 cA$ for brevity. \emph{Units:} throughout Sections~\ref{sec:formulation}--\ref{sec:splitpoints} energy is measured in the model's nominal units (drag constants at cruise speed, calm air), which we write as pseudo-joules (pseudo-J) to distinguish them from the real joules of the wind-aware extension in Section~\ref{sec:windaware}. As with distances, we treat intra-region and inter-region pairs separately.
 
 \paragraph{Intra-region energy.}
 Following the same approach as for distances, we introduce an auxiliary continuous variable $efs_v$ that accumulates the energy from the start of the chain to vertex $v$:
@@ -413,7 +407,7 @@ Following the same approach as for distances, we introduce an auxiliary continuo
 \noindent where $C_{ts}=E^{xy}\rho_t\,\nu_{ts}^d$ is the energy per unit distance on segment $s$ of chain $t$, computed as a constant during pre-processing. The drone ground speed $\nu_{ts}^d$ along segment $s$ is obtained from $\vec\nu_{ts}^d = v_{\text{cruise}}\frac{Q^{s+1}-Q^s}{\|Q^{s+1}-Q^s\|} - \vec\nu_{h}^w$ for forward traversal (and the opposite sign for backward traversal).
 
 \paragraph{Inter-region energy.}
-\emph{Idea.} Flying from region $r$ to region $r'$ burns horizontal energy at the air density of the departure altitude and vertical energy only for the climbed part. Both depend on decisions: the departure chain (via $\alpha_t$) selects the density, and the relative heights of $r$ and $r'$ decide the climb direction. Two auxiliary binaries disentangle this: $\varphi_{rr'}$ is one if the drone departs from region $r$ at the altitude selected for that region, and $\psi_{rr'}$ is one if the altitude of $r$ is lower than that of $r'$. Each branch of~\eqref{eq:ener_ext} below is then a product of binaries with distances, linearized exactly with Fortet envelopes. The energy consumption is then:
+Flying from region $r$ to region $r'$ burns horizontal energy at the air density of the departure altitude and vertical energy only for the climbed part. Both depend on decisions: the departure chain (via $\alpha_t$) selects the density, and the relative heights of $r$ and $r'$ decide the climb direction. To disentangle the two effects we introduce auxiliary binaries: $\varphi_{rr'}$ is one if the drone departs from region $r$ at the altitude selected for that region, and $\psi_{rr'}$ is one if the altitude of $r$ is lower than that of $r'$. Each branch of~\eqref{eq:ener_ext} below is then a product of binaries with distances, linearized exactly with Fortet envelopes. The energy consumption is then:
 
 \begin{align}
     w_{vv'} &=
@@ -451,9 +445,7 @@ For movements to and from the depot $v_0=(0,0,0)$, we use a simplified model wit
 
 \subsection{Endurance constraint}
 
-\emph{Idea.} An operation is feasible only if the energy of the legs it actually flies fits the battery. That is a product of two variables (fly the leg $\times$ leg cost), so we introduce one auxiliary $\ell_{uv}^o$ per leg--operation pair that equals $w_{uv}$ when $x_{uv}^o=1$ and $0$ otherwise (big-M, End-C$_1$--C$_4$); the budget $W^{\max}$ then caps the sum per operation (End-C$_5$). The same device serves the objective, which needs $x_{uv}^o\cdot d_{uv}$.
-
-The bilinear product $x_{uv}^o\,w_{uv}$ in the endurance constraint (and $x_{uv}^o\,d_{uv}$ in the objective) is linearized via auxiliary continuous variables $\ell_{uv}^o$ with the following big-M formulation:
+An operation is feasible only if the energy of the legs it actually flies fits the battery. That is a product of two variables (fly the leg $\times$ leg cost), so we introduce one auxiliary $\ell_{uv}^o$ per leg--operation pair that equals $w_{uv}$ when $x_{uv}^o=1$ and $0$ otherwise (big-M, End-C$_1$--C$_4$); the budget $W^{\max}$ then caps the sum per operation (End-C$_5$). The same device serves the objective, which needs $x_{uv}^o\cdot d_{uv}$. The linearization uses auxiliary continuous variables $\ell_{uv}^o$ with the following big-M formulation:
 
 \begin{align}
     \ell_{uv}^o &\le x_{uv}^o\cdot M,
@@ -506,7 +498,7 @@ The complete formulation of the CPP follows, grouping the constraints by family:
 
 \subsection{Alternative Edges-Approach formulation}\label{sec:alternative}
 
-\emph{Idea.} The Vertex-Approach tracks every vertex visit explicitly ($y_v^o$) and forbids subtours with MTZ ordering variables. When regions grow, vertex pairs explode---yet covering a ring only requires \emph{traversing} its edges, not naming each visit. The Edges-Approach therefore drops $y_v^o$ and the MTZ variables entirely, counts coverage directly on the traversal variables $x_{uv}^o$ (a rural-postman perspective), and forbids subtours with DFJ cuts separated lazily only when violated. Location, distance, energy and endurance blocks are untouched; only the routing layer changes, and its constraints mirror Path-C/VI-C one by one (primed tags).
+The Vertex-Approach tracks every vertex visit explicitly ($y_v^o$) and forbids subtours with MTZ ordering variables. When regions grow, vertex pairs explode---yet covering a ring only requires \emph{traversing} its edges, not naming each visit. The Edges-Approach therefore drops $y_v^o$ and the MTZ variables entirely, counts coverage directly on the traversal variables $x_{uv}^o$ (a rural-postman perspective), and forbids subtours with DFJ cuts separated lazily only when violated. Location, distance, energy and endurance blocks are untouched; only the routing layer changes, and its constraints mirror Path-C/VI-C one by one (primed tags).
 
 \input{tables/table_binary_variables_new}
 
@@ -554,9 +546,9 @@ The traversal variables $x_{uv}^o$ replace the vertex-visitation variables $y_v^
 
 \subsection{Multiple split points per ring}\label{sec:splitpoints}
 
-\emph{Idea.} A ring covered as one loop forces its entry and exit points to coincide, so a tour can never slip out mid-ring to visit a neighbour and come back. Allowing $K$ arcs per ring turns each ring into a sequence of pieces joined by zero-cost connectors; pieces of the same ring may then live in different operations or be interleaved with other regions inside one operation. Section~\ref{sec:k2-example} walks through a concrete $K=2$ solution arc by arc.
+Covering a ring as one loop forces its entry and exit points to coincide, so a tour can never slip out mid-ring to visit a neighbour and come back. Allowing $K$ arcs per ring turns each ring into a sequence of pieces joined by zero-cost connectors; pieces of the same ring may then live in different operations or be interleaved with other regions inside one operation. Section~\ref{sec:k2-example} walks through a concrete $K=2$ solution arc by arc.
 
-The Vertex-Approach formulation of Section~\ref{sec:formulation} covers each ring as a single full loop: exactly one coincident launch/retrieve pair is placed per ring, so a ring can never be split across operations (nor entered and exited at different points of the same operation).  We generalize the model with a parameter $K \ge 1$, the number of \emph{continuous split points} allowed per ring; $K=1$ reproduces the original behaviour.
+The Vertex-Approach formulation of Section~\ref{sec:formulation} covers each ring as a single full loop: exactly one coincident launch/retrieve pair is placed per ring, so a ring can never be split across operations (nor entered and exited at different points of the same operation).  We generalize the model with a parameter $K \ge 1$, the number of \emph{continuous split points} allowed per ring; $K=1$ reproduces the original behavior.
 
 For $K \ge 2$, each ring $\kappa$ is partitioned into $K$ arcs in series.  With vertices $(\ell_j, r_j)$, $j=1,\dots,K$, denoting the launch/retrieve pair of arc $j$, the split positions are ordered along the ring by
 \begin{align}
@@ -605,7 +597,7 @@ Table~\ref{tab:k2-walk} walks through the single operation of Fig.~\ref{fig:demo
 
 \subsection{Wind-aware energy model}\label{sec:windaware}
 
-\emph{Idea.} Drag depends on \emph{airspeed}, not ground speed: holding a ground track against the wind costs more than riding with it. With the cruise speed of 15\,m/s used throughout this paper, an 8\,m/s east wind makes an eastbound leg cost only $7/15$ of its calm-air energy while the same leg westbound costs $23/15$---a factor-three asymmetry the pseudo-energy misses entirely. The extension below prices every leg by its true airspeed: exact per-heading rates on ring segments (W-C$_1$), centroid-direction rates on transits and depot legs. Crucially, all of these rates are \emph{constants} computed before the solve (headings are known geometry), so the model stays a MIQP.
+Drag depends on \emph{airspeed}, not ground speed: holding a ground track against the wind costs more than riding with it. With the cruise speed of 15\,m/s used throughout this paper, an 8\,m/s east wind makes an eastbound leg cost only $7/15$ of its calm-air energy while the same leg westbound costs $23/15$---a factor-three asymmetry the pseudo-energy misses entirely. The extension below prices every leg by its true airspeed: exact per-heading rates on ring segments (W-C$_1$), centroid-direction rates on transits and depot legs. Crucially, all of these rates are \emph{constants} computed before the solve (headings are known geometry), so the model stays a MIQP.
 
 The pseudo-energy used above (metres on coverage legs and transits) ignores the wind entirely, except through a crude factor on depot legs.  We extend the model with real energy in joules, evaluated from the airspeed required to hold each ground track.  The wind blows in a single constant direction $\vec u^{\,w}$ with power-law speed profile $\nu^w_h = \nu^w_{10}(h/10)^a$ (hellmann exponent $a=0.2$); air density $\rho_h$ follows the barometric formula.  On a leg flown at ground velocity $\vec\nu$, the drone airspeed is $\vec\nu^{\,d}_h = \vec\nu - \vec\nu^{\,w}_h$ and the drag energy per metre is $E^{xy}\rho_h \lvert\vec\nu^{\,d}_h\rvert$ with $E^{xy}=\tfrac12 cA$.
 
@@ -616,7 +608,7 @@ w_{uv} = \sum_{t}\sum_{s} C_{ts}\,L(s)\,\bigl[I_{uvs}^t - \eta_u^{ts} - (\mu_v^{
 \]
 where the binary indicator $I_{uvs}^t$ tells whether the arc covers segment $s$ on chain $t$, enforced by $I_{uvs}^t \ge \sum_{s'\le s}\mu_u^{ts'} + \sum_{s'\ge s}\mu_v^{ts'} - 1$ together with the two upper bounds $I_{uvs}^t \le \sum_{s'\le s}\mu_u^{ts'}$ and $I_{uvs}^t \le \sum_{s'\ge s}\mu_v^{ts'}$; the $\eta$ terms discount the uncovered fractional ends.  The backward direction uses $C^b_{ts}$ with mirrored partials.  All other constraints, including distances (the objective stays a distance), are unchanged.
 
-\paragraph{Inter-region and depot legs.}  Following the paper's centroid approximation, the ground direction of a leg $(r,r')$ is fixed offline as the unit vector between region centroids, giving precomputable airspeed factors $F_{rr't} = E^{xy}\rho_{h_t}\lvert v_{\text{cruise}}\vec d_{rr'} - \vec\nu^{\,w}_{h_t}\rvert$ per departure chain $t$ (plus a vertical term $V_t = \tfrac12 E^{z}\nu^z\rho_{h_t}$).  The only remaining bilinearities are products of these constants with distances times the one-hot selection $\alpha_t$ (e.g.\ $d^{xy}_{vv'}\cdot\alpha_t$), linearised exactly with Fortet envelopes.  Depot legs use the same construction with the fixed depot-to-centroid direction.  The mode is opt-in (\texttt{wind\_aware} flag, off by default) and orthogonal to $K$.
+\paragraph{Inter-region and depot legs.}  Following the paper's centroid approximation, the ground direction of a leg $(r,r')$ is fixed offline as the unit vector between region centroids, giving precomputable airspeed factors $F_{rr't} = E^{xy}\rho_{h_t}\lvert v_{\text{cruise}}\vec d_{rr'} - \vec\nu^{\,w}_{h_t}\rvert$ per departure chain $t$ (plus a vertical term $V_t = \tfrac12 E^{z}\nu^z\rho_{h_t}$).  The only remaining bilinearities are products of these constants with distances times the one-hot selection $\alpha_t$ (e.g.\ $d^{xy}_{vv'}\cdot\alpha_t$), linearized exactly with Fortet envelopes.  Depot legs use the same construction with the fixed depot-to-centroid direction.  The mode is opt-in (\texttt{wind\_aware} flag, off by default) and orthogonal to $K$.
 
 Switching to joules rescales endurance: on the showcase $E_{\min}$ drops from 153 pseudo-J to $68.7$\,J real.  Table~\ref{tab:wind-validation} validates the model at tight ($104$\,J) and loose ($207$\,J) budgets under strong wind (8\,m/s east) versus calm air: optimal tours and objectives are identical (594.7\,m in 2 ops; 500.2\,m in 1 op).  Wind therefore acts here as a second-order perturbation---it reshuffles $\approx$8--16\% of leg energy at 8\,m/s but does not change the optimal structure, which is driven by geometry and the endurance budget.  The $K=2$ wind-aware optimum (652.1\,m, Fig.~\ref{fig:demo-k2}) confirms splits remain beneficial under real energy accounting.
 
@@ -628,9 +620,9 @@ The exact mixed-integer formulation presented in Section~\ref{sec:formulation} b
 
 As summarized in Algorithm~\ref{alg:heuristic}, the solution procedure is decomposed into three sequential phases:
 \begin{enumerate}
-	\item \textbf{Pre-processing (\S\ref{sec:chain-sel}--\ref{sec:ring-info}):} Selects an appropriate flight chain (comprising altitude and coverage pattern) for each region and computes the geometric properties of the resulting surveillance rings.
-	\item \textbf{Construction (\S\ref{sec:tsp}--\ref{sec:split}):} Establishes a global visit sequence (giant tour) over all rings and partitions it into endurance-feasible operations.
-	\item \textbf{Improvement (\S\ref{sec:coord}--\ref{sec:ls}):} Refines entry points and applies metaheuristic local-search moves (intra-operation 2-opt and inter-operation Or-opt) to minimize total energy consumption.
+	\item \textbf{Pre-processing (Section~\ref{sec:chain-sel}--\ref{sec:ring-info}):} Selects an appropriate flight chain (comprising altitude and coverage pattern) for each region and computes the geometric properties of the resulting surveillance rings.
+	\item \textbf{Construction (Section~\ref{sec:tsp}--\ref{sec:split}):} Establishes a global visit sequence (giant tour) over all rings and partitions it into endurance-feasible operations.
+	\item \textbf{Improvement (Section~\ref{sec:coord}--\ref{sec:ls}):} Refines entry points and applies metaheuristic local-search moves (intra-operation 2-opt and inter-operation Or-opt) to minimize total energy consumption.
 \end{enumerate}
 
 \begin{algorithm}[t]
@@ -698,7 +690,7 @@ The heuristic resolves the trade-off independently for each region through a two
 
 \subsubsection{Ring Geometry and Parametrization}\label{sec:ring-info}
 
-Once the optimal chain is fixed for every region, all selected rings are aggregated into a globally indexed sequence $\mathcal{K} = \{\kappa_1, \dots, \kappa_M\}$. For each ring $\kappa_m$, we pre-compute and store:
+Once the optimal chain is fixed for every region, all selected rings are aggregated into a globally indexed sequence $\mathcal{K} = \{\kappa_1, \dots, \kappa_M\}$. For each ring $\kappa_m$, we precompute and store:
 \begin{itemize}
 	\item The spatial centroid $\bar p_m = (\bar x_m, \bar y_m, h_t)$.
 	\item The total perimeter length $\operatorname{perim}_m$.
@@ -709,7 +701,7 @@ The spatial coordinates corresponding to any arc-length $\lambda$ along ring $\k
 \[
 P(\lambda) = Q_{m,k}^{\text{start}} + \frac{\lambda - \Lambda_m(k-1)}{\ell_{m,k}} \bigl( Q_{m,k}^{\text{end}} - Q_{m,k}^{\text{start}} \bigr),
 \]
-where $\ell_{m,k}$ denotes the Euclidean length of segment $k$. This parametric mapping underpins both the entry-point refinement (\S\ref{sec:coord}) and the precise energy evaluation model (\S\ref{sec:split}).
+where $\ell_{m,k}$ denotes the Euclidean length of segment $k$. This parametric mapping underpins both the entry-point refinement (Section~\ref{sec:coord}) and the precise energy evaluation model (Section~\ref{sec:split}).
 
 \subsection{Phase 2: Tour Construction}
 
@@ -794,7 +786,7 @@ To escape local optima generated by the constructive phase, we implement two com
 \end{itemize}
 
 \subsubsection{Worked example: tracing the three phases}\label{sec:heuristic-trace}
-Table~\ref{tab:heuristic-trace} follows the heuristic step by step on a small instance (3 regions, 7 rings, calm wind, $W^{\max}=145.1$), with the exact intermediate values produced by the code. Phase~1 picks the low-altitude chain everywhere: perimeters are identical across chains, so the $0.5\,h_t$ term decides (e.g.\ R0: $63.8<83.8$). Phase~2 tours R0 $\to$ R2 $\to$ R1, 2-opt reverses the tail (R1 before R2, rings outside-in), and the greedy split pays two extra depot returns ($290.2\to316.8$) to gain feasibility in 3 operations. Phase~3 moves all 7 entry points toward their neighbours ($316.8\to311.3$) and then relocates ring R1r2 from op1 to the front of op3 via or-opt ($311.3\to289.9$). The narrative is fully monotone because every phase optimizes the same internal proxy; the final row re-evaluates the tour leg by leg in metres, the units of the MIQP objective.
+Table~\ref{tab:heuristic-trace} follows the heuristic step by step on a small instance (3 regions, 7 rings, calm wind, $W^{\max}=145.1$), with the exact intermediate values produced by the code. Phase~1 picks the low-altitude chain everywhere: perimeters are identical across chains, so the $0.5\,h_t$ term decides (e.g.\ R0: $63.8<83.8$). Phase~2 tours R0 $\to$ R2 $\to$ R1, 2-opt reverses the tail (R1 before R2, rings outside-in), and the greedy split pays two extra depot returns ($290.2\to316.8$) to gain feasibility in 3 operations. Phase~3 moves all 7 entry points toward their neighbors ($316.8\to311.3$) and then relocates ring R1r2 from op1 to the front of op3 via or-opt ($311.3\to289.9$). The narrative is fully monotone because every phase optimizes the same internal proxy; the final row re-evaluates the tour leg by leg in metres, the units of the MIQP objective.
 
 \begin{table}[t]
   \centering
@@ -808,7 +800,7 @@ Table~\ref{tab:heuristic-trace} follows the heuristic step by step on a small in
     P2 nearest neigh.\ & order R0r0, R0r1, R2r0, R2r1, R1r0, R1r1, R1r2 & 294.3 \\
     P2 2-opt & reversed tail: R0r0, R0r1, R1r2, R1r1, R1r0, R2r1, R2r0 & 290.2 \\
     P2 greedy split & op1 [R0r0, R0r1, R1r2] 131.4; op2 [R1r1, R1r0] 129.9; op3 [R2r1, R2r0] 55.5 & 316.8 \\
-    P3 coord-descent & 7 entry points moved toward neighbouring visits & 311.3 \\
+    P3 coord-descent & 7 entry points moved toward neighboring visits & 311.3 \\
     P3 or-opt & relocate R1r2: op1 $\to$ front of op3 & 289.9 \\
     Final & 3 operations; tour length 573.9\,m & --- \\
     \bottomrule
@@ -834,13 +826,13 @@ This complete warm-starting strategy accelerates convergence, reducing the time 
 		\toprule
 		\textbf{Parameter} & \textbf{Value} & \textbf{Algorithmic Stage} & \textbf{Description} \\
 		\midrule
-		$N_{\text{samples}}$ & 60 & \S\ref{sec:ring-info}, \S\ref{sec:coord} & Perimeter sample resolution for entry search \\
-		$N_{\text{coord}}$ & 8 & \S\ref{sec:coord} & Coordinate-descent passes for entry optimization \\
-		$N_{\text{coord}}^{\text{reopt}}$ & 3 & \S\ref{sec:ls} & Re-optimization passes following Or-opt moves \\
-		$N_{\text{passes}}^{\text{op}}$ & 10 & \S\ref{sec:ls} & Maximum 2-opt iterations per operation \\
-		$\varepsilon$ & $10^{-6}$ & \S\ref{sec:split}, \S\ref{sec:ls} & Numerical endurance feasibility tolerance \\
-		$\eta$ & $10^{-9}$ & \S\ref{sec:ls} & Minimum improvement threshold for local search \\
-		$\gamma$ & 0.5 & \S\ref{sec:chain-sel} & Objective weight balancing travel cost in chain selection \\
+		$N_{\text{samples}}$ & 60 & Section~\ref{sec:ring-info}, Section~\ref{sec:coord} & Perimeter sample resolution for entry search \\
+		$N_{\text{coord}}$ & 8 & Section~\ref{sec:coord} & Coordinate-descent passes for entry optimization \\
+		$N_{\text{coord}}^{\text{reopt}}$ & 3 & Section~\ref{sec:ls} & Re-optimization passes following Or-opt moves \\
+		$N_{\text{passes}}^{\text{op}}$ & 10 & Section~\ref{sec:ls} & Maximum 2-opt iterations per operation \\
+		$\varepsilon$ & $10^{-6}$ & Section~\ref{sec:split}, Section~\ref{sec:ls} & Numerical endurance feasibility tolerance \\
+		$\eta$ & $10^{-9}$ & Section~\ref{sec:ls} & Minimum improvement threshold for local search \\
+		$\gamma$ & 0.5 & Section~\ref{sec:chain-sel} & Objective weight balancing travel cost in chain selection \\
 		\bottomrule
 	\end{tabular}
 \end{table}
@@ -976,7 +968,7 @@ We report for each instance the objective value, solve time, and MIP gap (when a
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.95\linewidth]{pictures/compare_model_size.pdf}
-  \caption{Model size scaling: (a) mean variable count vs.\ number of regions for both formulations (log scale); (b) variable count vs.\ split points $K$ on the wind-aware demo.  The quadratic growth in $|{\cal V}|$ (routing variables over vertex pairs) and the steep cost of extra split points explain the solver behaviour observed in Tables~\ref{tab:k-sweep}--\ref{tab:results-summary-rings}.}
+  \caption{Model size scaling: (a) mean variable count vs.\ number of regions for both formulations (log scale); (b) variable count vs.\ split points $K$ on the wind-aware demo.  The quadratic growth in $|{\cal V}|$ (routing variables over vertex pairs) and the steep cost of extra split points explain the solver behavior observed in Tables~\ref{tab:k-sweep}--\ref{tab:results-summary-rings}.}
   \label{fig:model-size}
 \end{figure}
 
