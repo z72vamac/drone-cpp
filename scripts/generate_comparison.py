@@ -129,7 +129,8 @@ for nr in REGIONS:
     for meth, label, color in gap_series:
         df = rings if "rings" in meth else edges
         sub = subset(df, meth)
-        vals = sub[sub["num_regions"] == nr]["mip_gap"].dropna()
+        # FAIR: unsolved runs count as 100% gap (censoring bias otherwise).
+        vals = sub[sub["num_regions"] == nr]["mip_gap"].fillna(1.0)
         gap_means.setdefault(meth, []).append(vals.mean() * 100 if len(vals) else np.nan)
 
 x = np.arange(len(REGIONS))
@@ -143,7 +144,7 @@ ax.set_xticklabels(REGIONS)
 ax.set_xlabel("Number of regions $n_r$")
 ax.set_ylabel("Mean MIP gap (%)")
 ax.legend(ncols=3, fontsize=6, loc="upper left")
-ax.set_title("Mean MIP gap at time limit (1800s, averaged)")
+ax.set_title("Mean MIP gap at time limit (1800s, unsolved = 100%)")
 ax.grid(axis="y", linestyle="--", alpha=0.4)
 fig.tight_layout()
 fig.savefig(os.path.join(OUT_PICS, f"compare_gap_by_regions{SUF}.pdf"))
@@ -245,7 +246,10 @@ def stats(sub, nr):
     vals = sub[sub["num_regions"] == nr]
     obj = vals["objective"].mean()
     tim = vals["solve_time"].mean()
-    gap = vals["mip_gap"].mean() * 100 if "mip_gap" in vals else np.nan
+    # FAIR gap mean: runs with no solution count as 100% gap. Averaging only
+    # over solved runs (dropna) rewards formulations that fail on hard
+    # instances (censoring bias), e.g. cold edges at n_r=10 (2/90 solved).
+    gap = vals["mip_gap"].fillna(1.0).mean() * 100 if "mip_gap" in vals else np.nan
     return obj, tim, gap
 
 
@@ -262,7 +266,8 @@ with open(os.path.join(OUT_TABLES, "table_results_summary.tex"), "w", encoding="
     f.write(r"\centering" + "\n")
     f.write(r"\caption{Aggregated results for the Vertex-Approach (MTZ) formulation. "
             r"Mean objective and solve time averaged over height levels ($n_h=1,2,3$), "
-            r"endurance levels ($E=300$--2400\,J) and 5 seeds. MIP gap at the 1800\,s limit. "
+            r"endurance levels ($E=300$--2400\,J) and 5 seeds. MIP gap at the 1800\,s limit, "
+            r"counting runs with no solution as 100\% gap. "
             r"$H$ = heuristic standalone.}" + "\n")
     f.write(r"\label{tab:results-summary-rings}" + "\n")
     f.write(r"\resizebox{\textwidth}{!}{%" + "\n")
@@ -413,7 +418,8 @@ if not VERTEX_ONLY:
             ("edges", edges, "Edges-Approach", C_E, "-"),
             ("edges_ws", edges, "Edges-Approach+WS", C_EWS, "--")]:
         g = subset(df, meth)["mip_gap"].fillna(1.0).clip(upper=1.0)
-        ax.plot(taus, [(g <= t).mean() for t in taus], label=label,
+        solved = (subset(df, meth)["objective"].notna()).mean()
+        ax.plot(taus, [(g <= t).mean() for t in taus], label=f"{label} ({solved:.0%} solved)",
                 color=color, linestyle=ls, linewidth=1.5)
     ax.set_xlim(0, 1.0)
     ax.set_ylim(0.0, 1.02)
