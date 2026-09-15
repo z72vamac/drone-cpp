@@ -32,7 +32,7 @@ We developed a **MIQP formulation for drone coverage path planning** over disjoi
 - *(iii) Distances* (`Dist-C`): compact intra-ring form (accumulated `dfs` variable, avoids bilinear `μβ` products), inter-region as second-order cone (SOC) horizontal + linear vertical, depot legs.
 - *(iv) Energy and endurance*: pseudo-energy (metres on coverage/transits; aerodynamic factor on depot legs), big-M linearisation of the `x·w` product, `Wmax` budget per operation.
 
-**Equivalent edge-based reformulation.** Replaces vertex visits by edge coverage with **DFJ lazy-cut** subtour elimination (callback). Same optimum, different relaxation/structure trade-off. Full 540-config vertex-vs-edge comparison published in the paper: mean parity 1.023 cold (n=311) / 1.003 warm (n=528); warm-started formulations agree within 1% even at $n_r=10$; edge-based cold starts are slower on small instances but find better incumbents on large ones (with selection bias: it solves only 2/90 cold runs at $n_r=10$).
+**Equivalent edge-based reformulation.** Replaces vertex visits by edge coverage with **DFJ lazy-cut** subtour elimination (callback). Same optimum, different relaxation/structure trade-off. Full 540-config vertex-vs-edge comparison published in the paper: Dolan–Moré performance profiles show the vertex model strictly dominates cold (100% solved vs 61%, best on 98% at τ=1) while warm-started both tie within 5% of best on 97–99% of configs (mean parity 1.003, n=528).
 
 **Multi-phase heuristic (<0.6 s).** Proxy-cost chain selection → giant tour (nearest-neighbour + expansion) → greedy endurance-aware split → coordinate-descent entry-point optimisation → intra-operation 2-opt + inter-operation Or-opt. Used as a **warm start** for the exact solver.
 
@@ -96,7 +96,7 @@ We developed a **MIQP formulation for drone coverage path planning** over disjoi
 
 ## 6. Paper and presentation
 
-- **Paper** (`articulo/main.tex`, 27 pages, Elsevier): full formulation, heuristic, experiments with **real mean-based tables** (both sweeps complete: 540 configs × 3 methods each) and 4 comparison figures, including the full vertex-vs-edge analysis (parity 1.023/1.003, solved-count caveats for cold edges on large instances). No TODOs. Compiles cleanly.
+- **Paper** (`articulo/main.tex`, 28 pages, Elsevier): full formulation, heuristic, experiments with **real mean-based tables** (both sweeps complete: 540 configs × 3 methods each), 4 comparison figures plus Dolan–Moré performance profiles and a gap-distribution figure for the full vertex-vs-edge analysis (cold: vertex dominates 100% vs 61% solved; warm: near-tie within 5%). No TODOs. Compiles cleanly.
 - **Conference talk** (`articulo/congreso_beamer.tex` → 26-page PDF, 16:9 Madrid/whale, in English): animated 150 J/600 J showcase after the formulation, one equation family per slide, mean-based results, backup removed. Timing guide in `articulo/GUIA_PRESENTACION.md` (16'00'' for a 20-min slot).
 - Proposed, not done: document K and wind-aware in `implemented_model.tex`, add a with/without-wind slide to the deck.
 
