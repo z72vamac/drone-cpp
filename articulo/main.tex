@@ -69,41 +69,6 @@
 % \newcommand{\EMC}{{}}
 
 % \usepackage{adjustbox}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows}
-
-\tikzstyle{startstop} = [rectangle, rounded corners, 
-minimum width=1cm, 
-minimum height=1cm,
-text centered, 
-draw=black, 
-fill=red!30]
-
-\tikzstyle{io} = [trapezium, 
-trapezium stretches=true, % A later addition
-trapezium left angle=70, 
-trapezium right angle=110, 
-minimum width=3cm, 
-minimum height=1cm, text centered, 
-draw=black, fill=blue!30]
-
-\tikzstyle{process} = [rectangle, 
-minimum width=3cm, 
-minimum height=1cm, 
-text centered, 
-text width=4cm, 
-draw=black, 
-fill=orange!30]
-
-\tikzstyle{decision} = [diamond, 
-minimum width=3cm, 
-minimum height=1cm, 
-text centered,
-text width=4cm,
-aspect=2,
-draw=black, 
-fill=green!30]
-\tikzstyle{arrow} = [thick,->,>=stealth,  rounded corners]
 
 \title{Drone Coverage Path Planning}
 
@@ -589,7 +554,7 @@ The traversal variables $x_{uv}^o$ replace the vertex-visitation variables $y_v^
 
 \subsection{Multiple split points per ring}\label{sec:splitpoints}
 
-\emph{Idea.} A ring covered as one loop forces its entry and exit points to coincide, so a tour can never slip out mid-ring to visit a neighbour and come back. Allowing $K$ arcs per ring (Fig.~\ref{fig:model-k}) turns each ring into a sequence of pieces joined by zero-cost connectors; pieces of the same ring may then live in different operations or be interleaved with other regions inside one operation. Section~\ref{sec:k2-example} walks through a concrete $K=2$ solution arc by arc.
+\emph{Idea.} A ring covered as one loop forces its entry and exit points to coincide, so a tour can never slip out mid-ring to visit a neighbour and come back. Allowing $K$ arcs per ring turns each ring into a sequence of pieces joined by zero-cost connectors; pieces of the same ring may then live in different operations or be interleaved with other regions inside one operation. Section~\ref{sec:k2-example} walks through a concrete $K=2$ solution arc by arc.
 
 The Vertex-Approach formulation of Section~\ref{sec:formulation} covers each ring as a single full loop: exactly one coincident launch/retrieve pair is placed per ring, so a ring can never be split across operations (nor entered and exited at different points of the same operation).  We generalize the model with a parameter $K \ge 1$, the number of \emph{continuous split points} allowed per ring; $K=1$ reproduces the original behaviour.
 
@@ -601,53 +566,6 @@ For $K \ge 2$, each ring $\kappa$ is partitioned into $K$ arcs in series.  With 
     \lambda_{\ell_j} &\le \lambda_{r_j}, \quad j=1,\dots,K, \tag{S-C$_4$}\label{eq:k_order}
 \end{align}
 where $S_t$ is the number of segments of the ring on chain $t$ (so~\eqref{eq:k_anchor1} anchors the last retrieve point at the ring end of the selected chain).  Zero-length arcs are allowed, hence $K$ is an upper bound on the number of pieces.  Each arc $(\ell_j, r_j)$ must be traversed exactly once in either direction (the analogue of Path-C$_8$), and consecutive arcs are linked inside an operation by zero-length \emph{connector} edges $(r_j, \ell_{j+1})$ and $(\ell_{j+1}, r_j)$, plus the wrap connectors $(r_K, \ell_1)$ and $(\ell_1, r_K)$ joining the coincident ring endpoints.  Arc lengths follow from the cumulative-distance variables as $d_{\ell_j r_j} = dfs_{r_j} - dfs_{\ell_j}$ (pseudo-energy), or exactly under wind with the segment-overlap indicators of Section~\ref{sec:windaware}.
-
-\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}[scale=0.82, every node/.style={font=\footnotesize}]
-    % --- ring (coverage loop) ---
-    \draw[gray!50, thin] (0,0) circle (2.2);
-    % arc 1: S (180deg) clockwise through top to C (55deg), 125deg ~ 35%
-    \draw[blue, line width=2.2pt, ->, >=stealth] (180:2.2) arc (180:55:2.2);
-    % arc 2: C clockwise through right+bottom back to S, 235deg ~ 65%
-    \draw[red, line width=2.2pt, ->, >=stealth] (55:2.2) arc (55:-180:2.2);
-    % vertices
-    \fill (180:2.2) circle (2.4pt);
-    \node[left=2pt] at (180:2.2) {$\ell_1\,(\lambda{=}0)$};
-    \node[below left=1pt] at (180:2.2) {$r_2\,(\lambda{=}4)$};
-    \fill (55:2.2) circle (2.4pt);
-    \node[above right=1pt] at (55:2.2) {$r_1{=}\ell_2\,(\lambda{=}1.39)$};
-    \node[blue] at (115:2.75) {arc 1};
-    \node[red] at (-25:2.75) {arc 2};
-    % zero-length connectors (dashed loops)
-    \draw[dashed, gray, ->, >=stealth] (55:2.2) ++(0.12,0.28) arc (90:-180:0.28);
-    \node[gray, font=\scriptsize] at (1.95,2.15) {conn.\ $0$};
-    \draw[dashed, gray, ->, >=stealth] (180:2.2) ++(-0.30,-0.10) arc (180:-90:0.28);
-    \node[gray, font=\scriptsize] at (-3.05,-0.95) {wrap $0$};
-    % satellite region + interleaving transit
-    \draw[fill=green!10] (4.0,0.9) rectangle (4.9,1.8);
-    \node[font=\scriptsize] at (4.45,1.35) {satellite};
-    \draw[green!60!black, dashed, ->, >=stealth] (55:2.2) -- (4.05,1.15)
-      node[midway, above, font=\scriptsize] {exit};
-    \draw[green!60!black, dashed, ->, >=stealth] (4.05,1.6) -- (55:2.2)
-      node[midway, below, font=\scriptsize] {re-enter};
-    % depot + first entry / final return
-    \draw[fill=black!10] (-4.9,-2.1) rectangle (-4.1,-1.3);
-    \node[font=\scriptsize] at (-4.5,-1.7) {depot};
-    \draw[black, ->, >=stealth] (-4.05,-1.55) -- (180:2.2)
-      node[midway, below, font=\scriptsize] {enter};
-    \draw[black, ->, >=stealth] (180:2.2) ++(-0.05,-0.35) -- (-4.05,-1.95)
-      node[midway, below, font=\scriptsize] {return};
-    % lambda scale
-    \draw[->] (-2.6,-3.3) -- (2.6,-3.3) node[right, font=\scriptsize] {$\lambda$};
-    \foreach \l/\x in {0/-2.6, 1.39/-0.79, 4/2.6} {
-      \draw (\x,-3.3) -- (\x,-3.15);
-      \node[below, font=\scriptsize] at (\x,-3.32) {$\l$};
-    }
-  \end{tikzpicture}
-  \caption{A ring split into $K=2$ arcs (numbers from the demo solution of Fig.~\ref{fig:demo-k2}). The tour enters at $\ell_1$ ($\lambda=0$, S-C$_1$), covers arc~1, exits mid-ring at $r_1=\ell_2$ ($\lambda=1.39$, S-C$_2$) to visit the satellite, re-enters at the same point via the zero-length connector, covers arc~2, and returns to the depot from $r_2$ ($\lambda=4$, S-C$_3$); S-C$_4$ keeps every arc non-empty in the $\lambda$ order.}
-  \label{fig:model-k}
-\end{figure}
 
 Two structural facts are worth noting.  First, anchoring one cut at $\lambda=0$ is without loss of optimality up to a single extra arc: any tour whose ring is cut at $m$ points is reproduced with $K=m+1$ by adding the forced cut at $0$ and covering the two resulting sub-arcs consecutively in the same operation at zero extra cost.  Second, the models are \emph{nested}: a $K$-arc solution maps onto $K+1$ arcs by collapsing superfluous arcs to zero length, so optimal values are non-increasing in $K$.  The practical question is how small $K$ can be before the objective stops improving.
 
@@ -663,7 +581,7 @@ Table~\ref{tab:k-sweep} reports the best objective found for $K=1,\dots,5$ on th
 \end{figure}
 
 \subsubsection*{Worked example: the $K=2$ demo tour}\label{sec:k2-example}
-Table~\ref{tab:k2-walk} walks through the single operation of Fig.~\ref{fig:demo-k2} arc by arc (vertex indices decoded from the solver output; $\lambda$ cuts verified against the solution file). The tour covers the satellite rings opportunistically between pieces of the central region R0: R0-ring1 is split across steps~2 and~4, R0-ring0 across steps~6 and~8. Each re-entry reuses the cut point as both exit and entry ($r_1=\ell_2$ in Fig.~\ref{fig:model-k}), so no distance is wasted. With $K=1$ this tour is infeasible: each ring would have to be covered in one contiguous visit with coincident entry/exit, so R0 could not be interleaved with the satellites (the $K=1$ optimum on this instance is 677.6\,m---25.5\,m more, Table~\ref{tab:k-sweep}).
+Table~\ref{tab:k2-walk} walks through the single operation of Fig.~\ref{fig:demo-k2} arc by arc (vertex indices decoded from the solver output; $\lambda$ cuts verified against the solution file). The tour covers the satellite rings opportunistically between pieces of the central region R0: R0-ring1 is split across steps~2 and~4, R0-ring0 across steps~6 and~8. Each re-entry reuses the cut point as both exit and entry ($r_1=\ell_2$ in the notation above), so no distance is wasted. With $K=1$ this tour is infeasible: each ring would have to be covered in one contiguous visit with coincident entry/exit, so R0 could not be interleaved with the satellites (the $K=1$ optimum on this instance is 677.6\,m---25.5\,m more, Table~\ref{tab:k-sweep}).
 
 \begin{table}[t]
   \centering
